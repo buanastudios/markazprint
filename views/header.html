@@ -1,0 +1,33 @@
+<!-- 
+  TIBYAN PRINT SERVICE v2.0
+  header.html - Top Header & Desktop Navigation Component Template
+-->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-logo">🖨️</div>
+    <div>
+      <div class="brand-title">Tibyan Print <span style="font-size: 11px; background: var(--primary-light); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: bold;">v2.0</span></div>
+      <div class="brand-subtitle">Layanan Cetak Dokumen Yayasan</div>
+    </div>
+  </div>
+
+  <!-- Desktop Navigation Tabs -->
+  <nav class="app-nav-desktop">
+    <button class="nav-btn active" data-view="dashboard" onclick="Router.switchView('dashboard')">
+      <span>📊</span><span>Dashboard</span>
+    </button>
+    <button class="nav-btn nav-btn-request" data-view="request" onclick="Router.switchView('request')">
+      <span>➕</span><span>Buat Request</span>
+    </button>
+    <button class="nav-btn" data-view="status" onclick="Router.switchView('status')">
+      <span>📋</span><span>Status & History</span>
+    </button>
+  </nav>
+
+  <div class="header-user">
+    <div class="user-badge">
+      <div class="user-name" id="hdr-user-name">Memuat...</div>
+      <span class="user-role-chip role-user" id="hdr-user-role">USER</span>
+    </div>
+  </div>
+</header>

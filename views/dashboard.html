@@ -1,0 +1,54 @@
+<!-- 
+  TIBYAN PRINT SERVICE v2.0
+  dashboard.html - Dashboard View Component Template
+-->
+<div id="view-dashboard" class="app-view" style="display: block;">
+  
+  <!-- Welcome Banner -->
+  <div class="card" style="background: linear-gradient(135deg, #1A73E8 0%, #0B2545 100%); color: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div style="font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Selamat Datang di Tibyan Print v2.0</div>
+        <h2 id="dash-welcome-name" style="font-family: var(--font-heading); font-size: 22px; margin-top: 4px;">Assalamu'alaikum...</h2>
+        <p id="dash-welcome-sub" style="font-size: 13px; opacity: 0.9; margin-top: 4px;">Sistem Layanan Pencetakan Dokumen Mobile-First Yayasan At-Tibyan.</p>
+      </div>
+
+      <div id="dash-quick-action-area">
+        <button class="btn btn-secondary nav-btn-request" style="background: white; color: var(--primary); font-weight: 700;" onclick="Router.switchView('request')">
+          <span>➕</span><span>Cetak Dokumen Baru</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Counters Grid -->
+  <div class="grid-metrics" id="dash-metrics-grid">
+    <div class="metric-card waiting" style="cursor: pointer;" onclick="Router.switchView('status')">
+      <div class="metric-val" id="metric-waiting-val">0</div>
+      <div class="metric-label">Menunggu (Waiting)</div>
+    </div>
+
+    <div class="metric-card printing" style="cursor: pointer;" onclick="Router.switchView('status')">
+      <div class="metric-val" id="metric-printing-val">0</div>
+      <div class="metric-label">Proses Cetak (Printing)</div>
+    </div>
+
+    <div class="metric-card ready" style="cursor: pointer;" onclick="Router.switchView('status')">
+      <div class="metric-val" id="metric-ready-val">0</div>
+      <div class="metric-label">Siap Diambil (Ready)</div>
+    </div>
+
+    <div class="metric-card completed" style="cursor: pointer;" onclick="Router.switchView('status')">
+      <div class="metric-val" id="metric-completed-val">0</div>
+      <div class="metric-label">Selesai (Completed)</div>
+    </div>
+  </div>
+
+  <!-- Dynamic Role Content Container -->
+  <div id="dash-main-sections">
+    <div class="card" style="text-align: center; padding: 40px; color: var(--text-tertiary);">
+      Memuat statistik dashboard...
+    </div>
+  </div>
+
+</div>

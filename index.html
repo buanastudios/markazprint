@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1A73E8">
+  <title>Tibyan Print Service v2.0 - Yayasan At-Tibyan</title>
+
+  <!-- Google Fonts & Master CSS Design System -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Modular Application Shell -->
+  <div id="app-root">
+
+    <!-- Header Component Slot -->
+    <div id="header-slot"></div>
+
+    <!-- Main Workspace Container -->
+    <main class="main-content" id="main-container">
+      
+      <!-- Component Slots for View Partials -->
+      <div id="view-dashboard-slot"></div>
+      <div id="view-request-slot"></div>
+      <div id="view-status-slot"></div>
+
+    </main>
+
+    <!-- Floating Mobile Bottom Navigation Component Slot -->
+    <div id="nav-mobile-slot"></div>
+
+  </div>
+
+  <!-- Global Fullscreen Loader Overlay -->
+  <div id="global-loader" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
+    <div style="width: 48px; height: 48px; border: 5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+    <div style="font-family: var(--font-heading); font-size: 14px; font-weight: 500; color: var(--text-primary);">Memuat Tibyan Print v2.0...</div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Modals & Dialogs Component Slot -->
+  <div id="modals-slot"></div>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+
+  <!-- Modular JavaScript Engine & Feature Module Inclusions -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/template-engine.js"></script>
+  <script src="js/modules/ui.js"></script>
+  <script src="js/modules/router.js"></script>
+  <script src="js/modules/dashboard.js"></script>
+  <script src="js/modules/request.js"></script>
+  <script src="js/modules/status.js"></script>
+  <script src="js/modules/users.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
