@@ -1,61 +1,71 @@
 <!-- 
-  TIBYAN PRINT SERVICE v2.0
-  status.html - Status & History Queue View Component Template
+  MARKAZ PRINTING v2.0
+  Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
+  status.html - AdminLTE Status & History Queue View Component Template
 -->
 <div id="view-status" class="app-view" style="display: none;">
-  <div class="card">
+  
+  <div class="content-header">
+    <div class="content-title">
+      <span>📋</span><span>Daftar Status & Riwayat Cetak</span>
+    </div>
+    <div class="content-subtitle">Pantau dan kelola seluruh antrean permohonan pencetakan dokumen.</div>
+  </div>
+
+  <div class="card card-outline-primary">
     <div class="card-header">
-      <div class="card-title">
-        <span style="font-size: 20px;">📋</span>
-        <span>Daftar Status & Riwayat Cetak</span>
-      </div>
+      <h3 class="card-title">
+        <span>📑</span><span>Tabel Permohonan Dokumen</span>
+      </h3>
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-secondary btn-sm" onclick="StatusModule.exportSummaryReport()">📥 Ekspor CSV</button>
         <button class="btn btn-secondary btn-sm" onclick="StatusModule.loadData()">🔄 Refresh</button>
       </div>
     </div>
 
-    <!-- Status Filter Chips & Search Box -->
-    <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-bottom: 16px;">
-      <div class="chip-group" id="status-filter-chips">
-        <input type="radio" id="st-all" name="filter_status" value="ALL" class="chip-radio" checked onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-all" class="chip-label">Semua</label>
+    <div class="card-body">
+      <!-- Status Filter Chips & Search Box -->
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; margin-bottom: 16px;">
+        <div class="chip-group" id="status-filter-chips">
+          <input type="radio" id="st-all" name="filter_status" value="ALL" class="chip-radio" checked onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-all" class="chip-label">Semua</label>
 
-        <input type="radio" id="st-waiting" name="filter_status" value="WAITING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-waiting" class="chip-label">Waiting</label>
+          <input type="radio" id="st-waiting" name="filter_status" value="WAITING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-waiting" class="chip-label">Waiting</label>
 
-        <input type="radio" id="st-printing" name="filter_status" value="PRINTING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-printing" class="chip-label">Printing</label>
+          <input type="radio" id="st-printing" name="filter_status" value="PRINTING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-printing" class="chip-label">Printing</label>
 
-        <input type="radio" id="st-ready" name="filter_status" value="READY" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-ready" class="chip-label">Ready</label>
+          <input type="radio" id="st-ready" name="filter_status" value="READY" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-ready" class="chip-label">Ready</label>
 
-        <input type="radio" id="st-completed" name="filter_status" value="COMPLETED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-completed" class="chip-label">Completed</label>
+          <input type="radio" id="st-completed" name="filter_status" value="COMPLETED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-completed" class="chip-label">Completed</label>
 
-        <input type="radio" id="st-rejected" name="filter_status" value="REJECTED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
-        <label for="st-rejected" class="chip-label">Bermasalah</label>
+          <input type="radio" id="st-rejected" name="filter_status" value="REJECTED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)">
+          <label for="st-rejected" class="chip-label">Bermasalah</label>
+        </div>
+
+        <div style="min-width: 220px; flex: 1; max-width: 320px;">
+          <input type="text" id="status-search-input" class="form-control" placeholder="Cari Antrean / Nama / File..." onkeyup="StatusModule.handleSearch(this.value)">
+        </div>
       </div>
 
-      <div style="min-width: 220px; flex: 1; max-width: 320px;">
-        <input type="text" id="status-search-input" class="form-control" placeholder="Cari Antrean / Nama / File..." onkeyup="StatusModule.handleSearch(this.value)">
+      <!-- Multi-Select Batch Action Toolbar (Admin Only) -->
+      <div id="batch-action-toolbar" class="batch-toolbar" style="display: none;">
+        <span id="batch-selected-count" style="font-weight: 700; color: var(--adminlte-primary);">0 Antrean Dipilih</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-primary btn-sm" onclick="StatusModule.executeBatchUpdate('PRINTING')">⚡ Tandai PRINTING</button>
+          <button class="btn btn-success btn-sm" onclick="StatusModule.executeBatchUpdate('READY')">📦 Tandai READY</button>
+          <button class="btn btn-secondary btn-sm" onclick="StatusModule.executeBatchUpdate('COMPLETED')">✅ Tandai COMPLETED</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Multi-Select Batch Action Toolbar (Admin Only) -->
-    <div id="batch-action-toolbar" class="batch-toolbar" style="display: none;">
-      <span id="batch-selected-count" style="font-weight: 700; color: var(--primary);">0 Antrean Dipilih</span>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button class="btn btn-primary btn-sm" onclick="StatusModule.executeBatchUpdate('PRINTING')">⚡ Tandai PRINTING</button>
-        <button class="btn btn-sm" style="background: var(--success); color: white;" onclick="StatusModule.executeBatchUpdate('READY')">📦 Tandai READY</button>
-        <button class="btn btn-secondary btn-sm" onclick="StatusModule.executeBatchUpdate('COMPLETED')">✅ Tandai COMPLETED</button>
-      </div>
-    </div>
-
-    <!-- Dynamic Container for Table / Mobile Cards -->
-    <div id="requests-list-container">
-      <div style="text-align: center; padding: 40px; color: var(--text-tertiary);">
-        Memuat data permohonan...
+      <!-- Dynamic Container for Table / Mobile Cards -->
+      <div id="requests-list-container">
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          Memuat data permohonan...
+        </div>
       </div>
     </div>
 

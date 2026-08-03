@@ -1,15 +1,55 @@
 <!-- 
-  TIBYAN PRINT SERVICE v2.0
-  nav-mobile.html - Floating Mobile Bottom Navigation Component Template
+  MARKAZ PRINTING v2.0
+  Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
+  nav-mobile.html - AdminLTE Left Sidebar Component Template
 -->
-<nav class="app-nav-mobile">
-  <button class="nav-btn-mobile active" data-view="dashboard" onclick="Router.switchView('dashboard')">
-    <span style="font-size: 20px;">📊</span><span>Dashboard</span>
-  </button>
-  <button class="nav-btn-mobile nav-btn-request" data-view="request" onclick="Router.switchView('request')">
-    <span style="font-size: 20px;">➕</span><span>Buat Request</span>
-  </button>
-  <button class="nav-btn-mobile" data-view="status" onclick="Router.switchView('status')">
-    <span style="font-size: 20px;">📋</span><span>Status</span>
-  </button>
-</nav>
+<aside class="main-sidebar" id="app-sidebar">
+  <!-- Brand Logo Link -->
+  <a href="#" class="brand-link">
+    <div class="brand-image">🖨️</div>
+    <span class="brand-text font-weight-light">Markaz Printing <small style="font-size: 10px; opacity: 0.8;">v2.0</small></span>
+  </a>
+
+  <!-- User Profile Panel -->
+  <div class="user-panel" onclick="UIModule.openModal('modal-switch-identity')" title="Klik untuk ganti profil / role akses">
+    <div class="user-avatar" id="sb-user-initial">G</div>
+    <div class="user-info">
+      <div class="user-info-name" id="sb-user-name">Guru / Staff</div>
+      <div class="user-info-role" id="sb-user-role">USER • Yayasan T.I.B.Y.A.N.</div>
+    </div>
+  </div>
+
+  <!-- Sidebar Menu Nav -->
+  <ul class="sidebar-menu">
+    <li class="nav-header">MENU UTAMA</li>
+
+    <li class="nav-item">
+      <button class="nav-link active" data-view="dashboard" onclick="Router.switchView('dashboard')">
+        <span class="nav-icon">📊</span>
+        <p>Dashboard</p>
+      </button>
+    </li>
+
+    <li class="nav-item nav-btn-request">
+      <button class="nav-link" data-view="request" onclick="Router.switchView('request')">
+        <span class="nav-icon">➕</span>
+        <p>Buat Permohonan Cetak</p>
+      </button>
+    </li>
+
+    <li class="nav-item">
+      <button class="nav-link" data-view="status" onclick="Router.switchView('status')">
+        <span class="nav-icon">📋</span>
+        <p>Status & Riwayat Cetak</p>
+      </button>
+    </li>
+
+    <li class="nav-header" style="margin-top: 16px;">SISTEM & AKUN</li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="UIModule.openModal('modal-switch-identity')">
+        <span class="nav-icon">⚙️</span>
+        <p>Ganti Peran / Profil</p>
+      </button>
+    </li>
+  </ul>
+</aside>

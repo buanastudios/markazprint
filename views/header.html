@@ -1,34 +1,22 @@
 <!-- 
   MARKAZ PRINTING v2.0
   Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
-  header.html - Top Header & Desktop Navigation Component Template
+  header.html - AdminLTE Top Header Component Template
 -->
-<header class="app-header">
-  <div class="header-brand">
-    <div class="brand-logo">🖨️</div>
-    <div>
-      <div class="brand-title">Markaz Printing <span style="font-size: 11px; background: var(--primary-light); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-weight: bold;">v2.0</span></div>
-      <div class="brand-subtitle">by Buana Studios • Yayasan T.I.B.Y.A.N.</div>
+<header class="main-header">
+  <div class="navbar-left">
+    <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="Router.toggleSidebar()" title="Toggle Sidebar Navigation">
+      ☰
+    </button>
+    <div class="navbar-brand-title">
+      Markaz Printing <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">by Buana Studios • Yayasan T.I.B.Y.A.N.</span>
     </div>
   </div>
 
-  <!-- Desktop Navigation Tabs -->
-  <nav class="app-nav-desktop">
-    <button class="nav-btn active" data-view="dashboard" onclick="Router.switchView('dashboard')">
-      <span>📊</span><span>Dashboard</span>
-    </button>
-    <button class="nav-btn nav-btn-request" data-view="request" onclick="Router.switchView('request')">
-      <span>➕</span><span>Buat Request</span>
-    </button>
-    <button class="nav-btn" data-view="status" onclick="Router.switchView('status')">
-      <span>📋</span><span>Status & History</span>
-    </button>
-  </nav>
-
-  <!-- Interactive User Identity Badge -->
+  <!-- Right User Identity Badge -->
   <div class="header-user">
     <div class="user-badge" style="cursor: pointer;" onclick="UIModule.openModal('modal-switch-identity')" title="Klik untuk ganti profil / role akses">
-      <div class="user-name" id="hdr-user-name">Guru / Staff ⚙️</div>
+      <span class="user-name" id="hdr-user-name">Guru / Staff ⚙️</span>
       <span class="user-role-chip role-user" id="hdr-user-role">USER</span>
     </div>
   </div>

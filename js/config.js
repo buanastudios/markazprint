@@ -12,7 +12,7 @@ const APP_CONFIG = {
   
   // Replace with your deployed Google Apps Script Web App URL for GitHub Pages REST API calls:
   // e.g., 'https://script.google.com/macros/s/AKfycbx.../exec'
-  API_URL: '', 
+  API_URL: 'https://script.google.com/macros/s/AKfycbwrzuoCdO8J3RKJgC0-AXzGWAo_uxhWdPnw_msT_PfEtQRZIUQ63hleOMA6FcX8Lxra/exec', 
   
   MAX_FILE_SIZE_MB: 25,
   ALLOWED_EXTENSIONS: ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'txt'],

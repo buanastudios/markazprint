@@ -1,156 +1,166 @@
 <!-- 
-  TIBYAN PRINT SERVICE v2.0
-  request.html - Print Request Form View Component Template
+  MARKAZ PRINTING v2.0
+  Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
+  request.html - AdminLTE Print Request Form Component Template
 -->
 <div id="view-request" class="app-view" style="display: none;">
-  <div class="card">
+  
+  <div class="content-header">
+    <div class="content-title">
+      <span>🖨️</span><span>Buat Permohonan Cetak Dokumen Baru</span>
+    </div>
+    <div class="content-subtitle">Unggah dokumen atau tautkan Google Drive untuk diproses oleh Sekretariat.</div>
+  </div>
+
+  <div class="card card-outline-primary">
     <div class="card-header">
-      <div class="card-title">
-        <span style="font-size: 20px;">🖨️</span>
-        <span>Buat Permohonan Cetak Dokumen Baru</span>
+      <h3 class="card-title">
+        <span>📄</span><span>Form Spesifikasi & Pengunggahan Dokumen</span>
+      </h3>
+    </div>
+
+    <div class="card-body">
+      <!-- Dual Submission Tabs -->
+      <div class="tab-group">
+        <button type="button" class="tab-btn active" id="tab-btn-file" onclick="RequestModule.switchUploadTab('file')">📁 Unggah File Lokal (Drag & Drop)</button>
+        <button type="button" class="tab-btn" id="tab-btn-link" onclick="RequestModule.switchUploadTab('link')">🔗 Tautan Google Drive / Docs</button>
       </div>
-    </div>
 
-    <!-- Dual Submission Tabs -->
-    <div class="tab-group">
-      <button type="button" class="tab-btn active" id="tab-btn-file" onclick="RequestModule.switchUploadTab('file')">📁 Unggah File Lokal (Drag & Drop)</button>
-      <button type="button" class="tab-btn" id="tab-btn-link" onclick="RequestModule.switchUploadTab('link')">🔗 Tautan Google Drive / Docs</button>
-    </div>
-
-    <form id="form-new-request" onsubmit="RequestModule.handleSubmit(event)">
-      
-      <!-- Mode A: Local File Upload -->
-      <div id="upload-mode-file" class="form-group">
-        <label class="form-label">Dokumen Cetak <span class="required">*</span></label>
+      <form id="form-new-request" onsubmit="RequestModule.handleSubmit(event)">
         
-        <div id="uploader-drop-box" class="file-uploader" onclick="document.getElementById('file-input-field').click()">
-          <div class="file-uploader-icon">📁</div>
-          <div class="file-uploader-title">Klik atau Tarik File ke Sini</div>
-          <div class="file-uploader-desc">Format didukung: PDF, DOCX, XLSX, TXT (Maks. 25 MB)</div>
-          <input type="file" id="file-input-field" style="display: none;" onchange="RequestModule.handleFileSelect(event)" accept=".pdf,.docx,.doc,.xlsx,.xls,.txt">
+        <!-- Mode A: Local File Upload -->
+        <div id="upload-mode-file" class="form-group">
+          <label class="form-label">Dokumen Cetak <span style="color: var(--adminlte-danger);">*</span></label>
+          
+          <div id="uploader-drop-box" class="file-uploader" onclick="document.getElementById('file-input-field').click()">
+            <div class="file-uploader-icon" style="font-size: 36px; color: var(--adminlte-primary);">📁</div>
+            <div style="font-weight: 700; font-size: 14px; color: var(--adminlte-dark); margin-top: 4px;">Klik atau Tarik File ke Sini</div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Format didukung: PDF, DOCX, XLSX, TXT (Maks. 25 MB)</div>
+            <input type="file" id="file-input-field" style="display: none;" onchange="RequestModule.handleFileSelect(event)" accept=".pdf,.docx,.doc,.xlsx,.xls,.txt">
+          </div>
+
+          <div id="selected-file-info" class="selected-file-card" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">📄</span>
+              <div>
+                <div id="file-card-name" style="font-weight: 700; font-size: 13px;">file.pdf</div>
+                <div id="file-card-size" style="font-size: 11px; color: var(--text-muted);">120 KB</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="RequestModule.removeSelectedFile()">Hapus</button>
+          </div>
         </div>
 
-        <div id="selected-file-info" class="selected-file-card" style="display: none;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 24px;">📄</span>
-            <div>
-              <div id="file-card-name" style="font-weight: 700; font-size: 13px;">file.pdf</div>
-              <div id="file-card-size" style="font-size: 11px; color: var(--text-secondary);">120 KB</div>
+        <!-- Mode B: Google Drive URL Input -->
+        <div id="upload-mode-link" class="form-group" style="display: none;">
+          <label class="form-label">Tautan Google Drive / Google Docs / Sheets <span style="color: var(--adminlte-danger);">*</span></label>
+          <input type="url" id="req-drive-url" class="form-control" placeholder="https://docs.google.com/document/d/.../edit">
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Pastikan akses tautan Google Drive telah diatur ke "Siapa saja yang memiliki link" (Anyone with link).</div>
+          
+          <div style="margin-top: 12px;">
+            <label class="form-label">Judul Dokumen (Opsional)</label>
+            <input type="text" id="req-drive-title" class="form-control" placeholder="Contoh: Soal Ujian Semester Ganjil - IPA Class 8">
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 20px 0;">
+
+        <!-- Print Specifications Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+          
+          <!-- Ukuran Kertas -->
+          <div class="form-group">
+            <label class="form-label">Ukuran Kertas <span style="color: var(--adminlte-danger);">*</span></label>
+            <div class="chip-group">
+              <input type="radio" id="ps-a4" name="paper_size" value="A4" class="chip-radio" checked>
+              <label for="ps-a4" class="chip-label">A4</label>
+
+              <input type="radio" id="ps-f4" name="paper_size" value="F4" class="chip-radio">
+              <label for="ps-f4" class="chip-label">F4 (Folio)</label>
+
+              <input type="radio" id="ps-a5" name="paper_size" value="A5" class="chip-radio">
+              <label for="ps-a5" class="chip-label">A5</label>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="RequestModule.removeSelectedFile()">Hapus</button>
+
+          <!-- Orientasi -->
+          <div class="form-group">
+            <label class="form-label">Orientasi <span style="color: var(--adminlte-danger);">*</span></label>
+            <div class="chip-group">
+              <input type="radio" id="ori-port" name="orientation" value="Portrait" class="chip-radio" checked>
+              <label for="ori-port" class="chip-label">Portrait (Tegak)</label>
+
+              <input type="radio" id="ori-land" name="orientation" value="Landscape" class="chip-radio">
+              <label for="ori-land" class="chip-label">Landscape (Mendatar)</label>
+            </div>
+          </div>
+
+          <!-- Mode Warna -->
+          <div class="form-group">
+            <label class="form-label">Warna Cetak <span style="color: var(--adminlte-danger);">*</span></label>
+            <div class="chip-group">
+              <input type="radio" id="clr-bw" name="color_mode" value="Black White" class="chip-radio" checked>
+              <label for="clr-bw" class="chip-label">Hitam Putih (B/W)</label>
+
+              <input type="radio" id="clr-fc" name="color_mode" value="Color" class="chip-radio">
+              <label for="clr-fc" class="chip-label">Full Color</label>
+            </div>
+          </div>
+
+          <!-- Sisi Cetak (Duplex) -->
+          <div class="form-group">
+            <label class="form-label">Sisi Cetak <span style="color: var(--adminlte-danger);">*</span></label>
+            <div class="chip-group">
+              <input type="radio" id="dup-single" name="duplex" value="Single" class="chip-radio" checked>
+              <label for="dup-single" class="chip-label">1 Sisi (Single)</label>
+
+              <input type="radio" id="dup-double" name="duplex" value="Double" class="chip-radio">
+              <label for="dup-double" class="chip-label">2 Sisi (Bolak-Balik)</label>
+            </div>
+          </div>
+
+          <!-- Jumlah Copies -->
+          <div class="form-group">
+            <label class="form-label" for="req-copies">Jumlah Rangkap (Copies) <span style="color: var(--adminlte-danger);">*</span></label>
+            <input type="number" id="req-copies" class="form-control" value="1" min="1" max="500" required>
+          </div>
+
+          <!-- Finishing Stapler -->
+          <div class="form-group">
+            <label class="form-label">Finishing Stapler / Hecter</label>
+            <div class="chip-group">
+              <input type="radio" id="stp-no" name="stapler" value="No" class="chip-radio" checked>
+              <label for="stp-no" class="chip-label">Tanpa Stapler</label>
+
+              <input type="radio" id="stp-yes" name="stapler" value="Yes" class="chip-radio">
+              <label for="stp-yes" class="chip-label">Stapler / Hecter</label>
+            </div>
+          </div>
+
         </div>
-      </div>
 
-      <!-- Mode B: Google Drive URL Input -->
-      <div id="upload-mode-link" class="form-group" style="display: none;">
-        <label class="form-label">Tautan Google Drive / Google Docs / Sheets <span class="required">*</span></label>
-        <input type="url" id="req-drive-url" class="form-control" placeholder="https://docs.google.com/document/d/.../edit">
-        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Pastikan akses tautan Google Drive telah diatur ke "Siapa saja yang memiliki link" (Anyone with link).</div>
-        
-        <div style="margin-top: 12px;">
-          <label class="form-label">Judul Dokumen (Opsional)</label>
-          <input type="text" id="req-drive-title" class="form-control" placeholder="Contoh: Soal Ujian Semester Ganjil - IPA Class 8">
-        </div>
-      </div>
+        <!-- Batas Waktu & Catatan -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <div class="form-group">
+            <label class="form-label" for="req-deadline">Batas Waktu Diperlukan (Deadline) <span style="color: var(--adminlte-danger);">*</span></label>
+            <input type="datetime-local" id="req-deadline" class="form-control" required>
+          </div>
 
-      <hr style="border: 0; border-top: 1px solid var(--border-light); margin: 20px 0;">
-
-      <!-- Print Specifications Grid -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
-        
-        <!-- Ukuran Kertas -->
-        <div class="form-group">
-          <label class="form-label">Ukuran Kertas <span class="required">*</span></label>
-          <div class="chip-group">
-            <input type="radio" id="ps-a4" name="paper_size" value="A4" class="chip-radio" checked>
-            <label for="ps-a4" class="chip-label">A4</label>
-
-            <input type="radio" id="ps-f4" name="paper_size" value="F4" class="chip-radio">
-            <label for="ps-f4" class="chip-label">F4 (Folio)</label>
-
-            <input type="radio" id="ps-a5" name="paper_size" value="A5" class="chip-radio">
-            <label for="ps-a5" class="chip-label">A5</label>
+          <div class="form-group">
+            <label class="form-label" for="req-notes">Catatan Tambahan Sekretariat</label>
+            <textarea id="req-notes" class="form-control" rows="2" placeholder="Contoh: Tolong jilid klip di pojok kiri atas..."></textarea>
           </div>
         </div>
 
-        <!-- Orientasi -->
-        <div class="form-group">
-          <label class="form-label">Orientasi <span class="required">*</span></label>
-          <div class="chip-group">
-            <input type="radio" id="ori-port" name="orientation" value="Portrait" class="chip-radio" checked>
-            <label for="ori-port" class="chip-label">Portrait (Tegak)</label>
-
-            <input type="radio" id="ori-land" name="orientation" value="Landscape" class="chip-radio">
-            <label for="ori-land" class="chip-label">Landscape (Mendatar)</label>
-          </div>
+        <!-- Form Action Controls -->
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="Router.switchView('dashboard')">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <span>🚀</span><span>Kirim Permohonan Cetak</span>
+          </button>
         </div>
 
-        <!-- Mode Warna -->
-        <div class="form-group">
-          <label class="form-label">Warna Cetak <span class="required">*</span></label>
-          <div class="chip-group">
-            <input type="radio" id="clr-bw" name="color_mode" value="Black White" class="chip-radio" checked>
-            <label for="clr-bw" class="chip-label">Hitam Putih (B/W)</label>
-
-            <input type="radio" id="clr-fc" name="color_mode" value="Color" class="chip-radio">
-            <label for="clr-fc" class="chip-label">Full Color</label>
-          </div>
-        </div>
-
-        <!-- Sisi Cetak (Duplex) -->
-        <div class="form-group">
-          <label class="form-label">Sisi Cetak <span class="required">*</span></label>
-          <div class="chip-group">
-            <input type="radio" id="dup-single" name="duplex" value="Single" class="chip-radio" checked>
-            <label for="dup-single" class="chip-label">1 Sisi (Single)</label>
-
-            <input type="radio" id="dup-double" name="duplex" value="Double" class="chip-radio">
-            <label for="dup-double" class="chip-label">2 Sisi (Bolak-Balik)</label>
-          </div>
-        </div>
-
-        <!-- Jumlah Copies -->
-        <div class="form-group">
-          <label class="form-label" for="req-copies">Jumlah Rangkap (Copies) <span class="required">*</span></label>
-          <input type="number" id="req-copies" class="form-control" value="1" min="1" max="500" required>
-        </div>
-
-        <!-- Finishing Stapler -->
-        <div class="form-group">
-          <label class="form-label">Finishing Stapler / Hecter</label>
-          <div class="chip-group">
-            <input type="radio" id="stp-no" name="stapler" value="No" class="chip-radio" checked>
-            <label for="stp-no" class="chip-label">Tanpa Stapler</label>
-
-            <input type="radio" id="stp-yes" name="stapler" value="Yes" class="chip-radio">
-            <label for="stp-yes" class="chip-label">Stapler / Hecter</label>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Batas Waktu & Catatan -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
-        <div class="form-group">
-          <label class="form-label" for="req-deadline">Batas Waktu Diperlukan (Deadline) <span class="required">*</span></label>
-          <input type="datetime-local" id="req-deadline" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="req-notes">Catatan Tambahan Sekretariat</label>
-          <textarea id="req-notes" class="form-control" rows="2" placeholder="Contoh: Tolong jilid klip di pojok kiri atas..."></textarea>
-        </div>
-      </div>
-
-      <!-- Form Action Controls -->
-      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;">
-        <button type="button" class="btn btn-secondary" onclick="Router.switchView('dashboard')">Batal</button>
-        <button type="submit" class="btn btn-primary">
-          <span>🚀</span><span>Kirim Permohonan Cetak</span>
-        </button>
-      </div>
-
-    </form>
+      </form>
+    </div>
   </div>
 </div>

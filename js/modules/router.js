@@ -1,16 +1,23 @@
 /**
- * TIBYAN PRINT SERVICE v2.0
- * router.js - SPA Navigation & View Routing Lifecycle Module
+ * MARKAZ PRINTING v2.0
+ * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
+ * router.js - SPA Navigation & AdminLTE Sidebar Router Lifecycle Module
  */
 
 const Router = {
   async switchView(viewName) {
     AppState.activeView = viewName;
 
-    // Sync Active States on Desktop Header & Mobile Bottom Nav
-    document.querySelectorAll('.nav-btn, .nav-btn-mobile').forEach(btn => {
+    // Sync Active States on AdminLTE Sidebar & Desktop Header
+    document.querySelectorAll('.nav-link').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.view === viewName);
     });
+
+    // On Mobile, close sidebar after clicking a nav item
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar && window.innerWidth <= 768) {
+      sidebar.classList.remove('sidebar-open');
+    }
 
     // Hide all view containers
     document.querySelectorAll('.app-view').forEach(v => v.style.display = 'none');
@@ -29,11 +36,17 @@ const Router = {
     }
   },
 
+  toggleSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('sidebar-open');
+    }
+  },
+
   setupRoleNavigation() {
     if (!AppState.user) return;
     const isViewer = (AppState.user.role === 'VIEWER');
 
-    // Only hide "Buat Request" if user is strictly in Read-Only Viewer mode (Kepala Sekolah)
     document.querySelectorAll('.nav-btn-request').forEach(btn => {
       btn.style.display = isViewer ? 'none' : 'inline-flex';
     });
