@@ -1,12 +1,17 @@
 /**
- * TIBYAN PRINT SERVICE v2.0
+ * MARKAZ PRINTING v2.0
+ * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
  * request.js - Print Request Form & Native Drag-and-Drop Submission Module
  */
 
 const RequestModule = {
   setupDragAndDrop() {
     const dropZone = document.getElementById('uploader-drop-box');
-    if (!dropZone) return;
+    if (!dropZone) return; // Null check prevents Uncaught TypeError
+
+    // Prevent duplicate listener attachments
+    if (dropZone.dataset.listenersBound === 'true') return;
+    dropZone.dataset.listenersBound = 'true';
 
     ['dragenter', 'dragover'].forEach(eventName => {
       dropZone.addEventListener(eventName, (e) => {
@@ -35,11 +40,15 @@ const RequestModule = {
 
   switchUploadTab(tabType) {
     AppState.activeUploadTab = tabType;
-    document.getElementById('tab-btn-file').classList.toggle('active', tabType === 'file');
-    document.getElementById('tab-btn-link').classList.toggle('active', tabType === 'link');
+    const tabFile = document.getElementById('tab-btn-file');
+    const tabLink = document.getElementById('tab-btn-link');
+    const modeFile = document.getElementById('upload-mode-file');
+    const modeLink = document.getElementById('upload-mode-link');
 
-    document.getElementById('upload-mode-file').style.display = (tabType === 'file' ? 'block' : 'none');
-    document.getElementById('upload-mode-link').style.display = (tabType === 'link' ? 'block' : 'none');
+    if (tabFile) tabFile.classList.toggle('active', tabType === 'file');
+    if (tabLink) tabLink.classList.toggle('active', tabType === 'link');
+    if (modeFile) modeFile.style.display = (tabType === 'file' ? 'block' : 'none');
+    if (modeLink) modeLink.style.display = (tabType === 'link' ? 'block' : 'none');
   },
 
   handleFileSelect(event) {
@@ -65,10 +74,15 @@ const RequestModule = {
     const reader = new FileReader();
     reader.onload = (e) => {
       AppState.selectedFileBase64 = e.target.result;
-      document.getElementById('file-card-name').innerText = file.name;
-      document.getElementById('file-card-size').innerText = (file.size / 1024).toFixed(1) + ' KB';
-      document.getElementById('selected-file-info').style.display = 'flex';
-      document.getElementById('uploader-drop-box').style.display = 'none';
+      const cardName = document.getElementById('file-card-name');
+      const cardSize = document.getElementById('file-card-size');
+      const fileInfo = document.getElementById('selected-file-info');
+      const dropBox = document.getElementById('uploader-drop-box');
+
+      if (cardName) cardName.innerText = file.name;
+      if (cardSize) cardSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
+      if (fileInfo) fileInfo.style.display = 'flex';
+      if (dropBox) dropBox.style.display = 'none';
     };
     reader.readAsDataURL(file);
   },
@@ -77,9 +91,12 @@ const RequestModule = {
     AppState.selectedFile = null;
     AppState.selectedFileBase64 = null;
     const inputField = document.getElementById('file-input-field');
+    const fileInfo = document.getElementById('selected-file-info');
+    const dropBox = document.getElementById('uploader-drop-box');
+
     if (inputField) inputField.value = '';
-    document.getElementById('selected-file-info').style.display = 'none';
-    document.getElementById('uploader-drop-box').style.display = 'block';
+    if (fileInfo) fileInfo.style.display = 'none';
+    if (dropBox) dropBox.style.display = 'block';
   },
 
   resetForm() {
@@ -94,6 +111,9 @@ const RequestModule = {
     if (deadlineInput) {
       deadlineInput.value = tomorrow.toISOString().slice(0, 16);
     }
+
+    // Re-bind Drag & Drop if container was freshly loaded
+    this.setupDragAndDrop();
   },
 
   async handleSubmit(event) {
@@ -104,10 +124,10 @@ const RequestModule = {
       orientation: document.querySelector('input[name="orientation"]:checked')?.value || 'Portrait',
       color_mode: document.querySelector('input[name="color_mode"]:checked')?.value || 'Black White',
       duplex: document.querySelector('input[name="duplex"]:checked')?.value || 'Single',
-      copies: document.getElementById('req-copies').value || 1,
+      copies: document.getElementById('req-copies')?.value || 1,
       stapler: document.querySelector('input[name="stapler"]:checked')?.value || 'No',
-      deadline: document.getElementById('req-deadline').value,
-      notes: document.getElementById('req-notes').value || '-'
+      deadline: document.getElementById('req-deadline')?.value || '-',
+      notes: document.getElementById('req-notes')?.value || '-'
     };
 
     if (AppState.activeUploadTab === 'file') {
@@ -119,13 +139,13 @@ const RequestModule = {
       payload.file_mime = AppState.selectedFile.type;
       payload.file_data = AppState.selectedFileBase64;
     } else {
-      const driveUrl = document.getElementById('req-drive-url').value;
+      const driveUrl = document.getElementById('req-drive-url')?.value;
       if (!driveUrl) {
         UIModule.showToast('Harap masukkan tautan Google Drive / Google Docs.', 'error');
         return;
       }
       payload.drive_url = driveUrl;
-      payload.file_name = document.getElementById('req-drive-title').value || 'Dokumen Google Drive';
+      payload.file_name = document.getElementById('req-drive-title')?.value || 'Dokumen Google Drive';
     }
 
     try {
