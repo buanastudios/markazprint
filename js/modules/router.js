@@ -32,10 +32,10 @@ const Router = {
   setupRoleNavigation() {
     if (!AppState.user) return;
     const isViewer = (AppState.user.role === 'VIEWER');
-    const isGuest = (AppState.user.role === 'GUEST');
 
-    if (isViewer || isGuest) {
-      document.querySelectorAll('.nav-btn-request').forEach(btn => btn.style.display = 'none');
-    }
+    // Only hide "Buat Request" if user is strictly in Read-Only Viewer mode (Kepala Sekolah)
+    document.querySelectorAll('.nav-btn-request').forEach(btn => {
+      btn.style.display = isViewer ? 'none' : 'inline-flex';
+    });
   }
 };

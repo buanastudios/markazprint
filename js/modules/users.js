@@ -1,9 +1,58 @@
 /**
  * TIBYAN PRINT SERVICE v2.0
- * users.js - User Account Management Feature Module (Admin Only)
+ * users.js - User Account Management & Identity Switcher Feature Module
  */
 
 const UserModule = {
+  /**
+   * Saves active testing/demo identity locally and re-renders application state
+   */
+  async saveActiveIdentity() {
+    const email = document.getElementById('id-switch-email').value || 'guru@tibyan.org';
+    const name = document.getElementById('id-switch-name').value || 'Guru At-Tibyan';
+    const role = document.getElementById('id-switch-role').value || 'USER';
+
+    const identity = {
+      email: email.trim(),
+      name: name.trim(),
+      role: role,
+      department: role === 'ADMIN' ? 'Sekretariat Utama' : (role === 'VIEWER' ? 'Kepala Sekolah' : 'Pengajar / Staff'),
+      status: 'ACTIVE'
+    };
+
+    AppState.user = identity;
+    localStorage.setItem('tibyan_user_identity', JSON.stringify(identity));
+
+    // Sync header badge and route navigation
+    if (typeof renderUserHeader === 'function') renderUserHeader();
+    if (Router && Router.setupRoleNavigation) Router.setupRoleNavigation();
+
+    UIModule.closeModal('modal-switch-identity');
+    UIModule.showToast(`Profil berhasil diubah menjadi ${name} (${role}).`, 'success');
+
+    // Reload active view data
+    if (AppState.activeView === 'dashboard') {
+      await DashboardModule.loadData();
+    } else if (AppState.activeView === 'status') {
+      await StatusModule.loadData();
+    }
+  },
+
+  /**
+   * Restores stored identity from localStorage or default fallback
+   */
+  loadSavedIdentity() {
+    try {
+      const saved = localStorage.getItem('tibyan_user_identity');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('Could not load stored identity:', e);
+    }
+    return null;
+  },
+
   async openManagementModal() {
     UIModule.openModal('modal-manage-users');
     const users = await callApi('getAllUsers');

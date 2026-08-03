@@ -136,6 +136,13 @@ html, body {
 
 .user-badge {
   text-align: right;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.user-badge:hover {
+  background-color: var(--surface-variant);
 }
 
 .user-name {
@@ -205,6 +212,37 @@ html, body {
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+}
+
+/* Floating Action Button (FAB) for Mobile */
+.fab-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-size: 24px;
+  border: none;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999;
+  transition: var(--transition-fast);
+}
+
+.fab-btn:hover {
+  transform: scale(1.08);
+}
+
+@media (min-width: 769px) {
+  .fab-btn {
+    display: none;
+  }
 }
 
 /* Cards & Layout */

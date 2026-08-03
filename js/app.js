@@ -28,8 +28,33 @@ window.addEventListener('DOMContentLoaded', async () => {
     // 2. Setup Drag & Drop Listeners
     RequestModule.setupDragAndDrop();
 
-    // 3. Fetch Current User Role Context
-    AppState.user = await callApi('getCurrentUser');
+    // 3. Restore Local Identity or Fetch User Context from Server
+    const savedIdentity = UserModule.loadSavedIdentity();
+    if (savedIdentity) {
+      AppState.user = savedIdentity;
+    } else {
+      try {
+        AppState.user = await callApi('getCurrentUser');
+      } catch (err) {
+        // Fallback default identity for offline / unconfigured REST API
+        AppState.user = {
+          email: 'guru@tibyan.org',
+          name: 'Guru At-Tibyan',
+          role: 'USER',
+          department: 'Pengajar / Staff',
+          status: 'ACTIVE'
+        };
+      }
+    }
+
+    // Populate identity modal default fields
+    const idEmail = document.getElementById('id-switch-email');
+    const idName = document.getElementById('id-switch-name');
+    const idRole = document.getElementById('id-switch-role');
+    if (idEmail) idEmail.value = AppState.user.email;
+    if (idName) idName.value = AppState.user.name;
+    if (idRole) idRole.value = AppState.user.role;
+
     renderUserHeader();
     Router.setupRoleNavigation();
 

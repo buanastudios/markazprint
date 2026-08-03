@@ -13,9 +13,13 @@
         <p id="dash-welcome-sub" style="font-size: 13px; opacity: 0.9; margin-top: 4px;">Sistem Layanan Pencetakan Dokumen Mobile-First Yayasan At-Tibyan.</p>
       </div>
 
-      <div id="dash-quick-action-area">
+      <!-- Quick Action Buttons -->
+      <div id="dash-quick-action-area" style="display: flex; gap: 10px; flex-wrap: wrap;">
         <button class="btn btn-secondary nav-btn-request" style="background: white; color: var(--primary); font-weight: 700;" onclick="Router.switchView('request')">
           <span>➕</span><span>Cetak Dokumen Baru</span>
+        </button>
+        <button class="btn btn-secondary" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);" onclick="UIModule.openModal('modal-switch-identity')">
+          <span>⚙️</span><span>Ganti Role</span>
         </button>
       </div>
     </div>
@@ -50,5 +54,10 @@
       Memuat statistik dashboard...
     </div>
   </div>
+
+  <!-- Mobile Floating Action Button (FAB) for instant request creation -->
+  <button class="fab-btn nav-btn-request" onclick="Router.switchView('request')" title="Buat Permohonan Cetak Baru">
+    ➕
+  </button>
 
 </div>

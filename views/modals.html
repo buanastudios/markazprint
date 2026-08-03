@@ -1,8 +1,46 @@
 <!-- 
   TIBYAN PRINT SERVICE v2.0
-  modals.html - Modals & Dialogs Component Template (Update Status, Report Trouble, User Management)
+  modals.html - Modals & Dialogs Component Template (Identity Switcher, Status Update, Trouble, User Mgmt)
 -->
 <div>
+  <!-- Modal Identity & Role Switcher (Web App & Testing) -->
+  <div id="modal-switch-identity" class="modal-overlay">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-family: var(--font-heading); font-size: 18px;">👤 Ganti Profil / Role Akses</h3>
+        <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer;" onclick="UIModule.closeModal('modal-switch-identity')">&times;</button>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+        Pilih peran akses Anda untuk menguji dan menggunakan aplikasi Tibyan Print Service.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Email Google <span class="required">*</span></label>
+        <input type="email" id="id-switch-email" class="form-control" value="guru@tibyan.org" placeholder="email@tibyan.org">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+        <input type="text" id="id-switch-name" class="form-control" value="Guru At-Tibyan" placeholder="Nama Lengkap">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Pilih Peran / Role Akses <span class="required">*</span></label>
+        <select id="id-switch-role" class="form-control">
+          <option value="USER">USER (Guru / Staff - Buat & Pantau Cetakan)</option>
+          <option value="ADMIN">ADMIN (Sekretariat - Kelola Antrean & User)</option>
+          <option value="VIEWER">VIEWER (Kepala Sekolah - Analisis Eksekutif)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="UIModule.closeModal('modal-switch-identity')">Batal</button>
+        <button type="button" class="btn btn-primary" onclick="UserModule.saveActiveIdentity()">Gunakan Profil Ini</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Update Status Manual (Admin Only) -->
   <div id="modal-update-status" class="modal-overlay">
     <div class="modal-box">
