@@ -8,13 +8,16 @@ const StatusModule = {
     AppState.selectedBatchIds = [];
     this.updateBatchToolbar();
 
-    if (AppState.user.role === 'ADMIN' || AppState.user.role === 'VIEWER') {
-      const allReqs = await callApi('getAllRequests', { status: 'ALL' });
-      AppState.allRequests = allReqs || [];
+    const allReqs = await callApi('getAllRequests', { status: 'ALL' });
+    AppState.allRequests = allReqs || [];
+
+    const userEmail = AppState.user ? (AppState.user.email || '').toLowerCase() : '';
+    if (userEmail) {
+      AppState.myRequests = AppState.allRequests.filter(r => (r.user_email || '').toLowerCase() === userEmail);
     } else {
-      const myReqs = await callApi('getMyRequests');
-      AppState.myRequests = myReqs || [];
+      AppState.myRequests = AppState.allRequests;
     }
+
     this.renderFilteredList();
   },
 

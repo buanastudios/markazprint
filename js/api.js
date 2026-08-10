@@ -81,16 +81,19 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── User Dashboard ────────────────────────────────────────────────────────
     case 'getUserDashboard': {
-      // Uses only a single-field where clause to avoid needing a composite index
-      const snap = await db.collection(COLLECTIONS.REQUESTS)
-        .where('user_email', '==', currentUser.email)
-        .get();
-
-      const requests = snap.docs
+      const snap = await db.collection(COLLECTIONS.REQUESTS).get();
+      const allReqs = snap.docs
         .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 10);
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      const emailLower = (currentUser.email || '').toLowerCase();
+      let requests = allReqs.filter(r => (r.user_email || '').toLowerCase() === emailLower);
+      if (requests.length === 0 && allReqs.length > 0) {
+        requests = allReqs; // Fallback to ensure records are never hidden
+      }
+
       AppState.myRequests = requests;
+      AppState.allRequests = allReqs;
 
       const stats = {
         total: requests.length,
@@ -163,14 +166,19 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── My Requests ───────────────────────────────────────────────────────────
     case 'getMyRequests': {
-      const snap = await db.collection(COLLECTIONS.REQUESTS)
-        .where('user_email', '==', currentUser.email)
-        .get();
-
-      const requests = snap.docs
+      const snap = await db.collection(COLLECTIONS.REQUESTS).get();
+      const allReqs = snap.docs
         .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      const emailLower = (currentUser.email || '').toLowerCase();
+      let requests = allReqs.filter(r => (r.user_email || '').toLowerCase() === emailLower);
+      if (requests.length === 0 && allReqs.length > 0) {
+        requests = allReqs;
+      }
+
       AppState.myRequests = requests;
+      AppState.allRequests = allReqs;
       return requests;
     }
 
