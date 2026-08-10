@@ -1,7 +1,10 @@
 /**
  * MARKAZ PRINTING v2.0
  * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
- * config.js - Client Configuration & API Endpoint Gateway
+ * config.js - Client Application Configuration
+ *
+ * Backend: Firebase (Firestore + Storage + Analytics)
+ * Firebase initialization is handled in js/firebase.js
  */
 
 const APP_CONFIG = {
@@ -9,14 +12,10 @@ const APP_CONFIG = {
   VERSION: '2.0.0',
   DEVELOPER: 'Buana Studios',
   ORGANIZATION: 'Yayasan T.I.B.Y.A.N.',
-  
-  // Replace with your deployed Google Apps Script Web App URL for GitHub Pages REST API calls:
-  // e.g., 'https://script.google.com/macros/s/AKfycbx.../exec'
-  API_URL: 'https://script.google.com/macros/s/AKfycbwrzuoCdO8J3RKJgC0-AXzGWAo_uxhWdPnw_msT_PfEtQRZIUQ63hleOMA6FcX8Lxra/exec', 
-  
+
   MAX_FILE_SIZE_MB: 25,
   ALLOWED_EXTENSIONS: ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'txt'],
-  
+
   TROUBLE_PRESETS: [
     'Tinta / Toner Printer Habis',
     'Stok Kertas (A4/F4/A5) Habis',

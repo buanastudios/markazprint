@@ -1,15 +1,14 @@
 /**
  * MARKAZ PRINTING v2.0
  * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
- * request.js - Print Request Form & Native Drag-and-Drop Submission Module
+ * request.js - Print Request Form, Drag-and-Drop & Firebase Storage Upload Module
  */
 
 const RequestModule = {
   setupDragAndDrop() {
     const dropZone = document.getElementById('uploader-drop-box');
-    if (!dropZone) return; // Null check prevents Uncaught TypeError
+    if (!dropZone) return;
 
-    // Prevent duplicate listener attachments
     if (dropZone.dataset.listenersBound === 'true') return;
     dropZone.dataset.listenersBound = 'true';
 
@@ -71,20 +70,16 @@ const RequestModule = {
 
     AppState.selectedFile = file;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      AppState.selectedFileBase64 = e.target.result;
-      const cardName = document.getElementById('file-card-name');
-      const cardSize = document.getElementById('file-card-size');
-      const fileInfo = document.getElementById('selected-file-info');
-      const dropBox = document.getElementById('uploader-drop-box');
+    // Show file info card (no longer need base64 for preview)
+    const cardName = document.getElementById('file-card-name');
+    const cardSize = document.getElementById('file-card-size');
+    const fileInfo = document.getElementById('selected-file-info');
+    const dropBox = document.getElementById('uploader-drop-box');
 
-      if (cardName) cardName.innerText = file.name;
-      if (cardSize) cardSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
-      if (fileInfo) fileInfo.style.display = 'flex';
-      if (dropBox) dropBox.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
+    if (cardName) cardName.innerText = file.name;
+    if (cardSize) cardSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
+    if (fileInfo) fileInfo.style.display = 'flex';
+    if (dropBox) dropBox.style.display = 'none';
   },
 
   removeSelectedFile() {
@@ -112,8 +107,57 @@ const RequestModule = {
       deadlineInput.value = tomorrow.toISOString().slice(0, 16);
     }
 
-    // Re-bind Drag & Drop if container was freshly loaded
     this.setupDragAndDrop();
+  },
+
+  /**
+   * Uploads a file to Firebase Storage and returns its public download URL.
+   * Shows a progress bar during upload.
+   *
+   * @param {File} file - The file object to upload
+   * @param {string} queueId - Used to build a unique storage path
+   * @returns {Promise<{url: string, path: string}>}
+   */
+  uploadFileToStorage(file, queueId) {
+    return new Promise((resolve, reject) => {
+      // Guard: if Firebase Storage isn't available, skip upload
+      if (typeof storage === 'undefined') {
+        console.warn('[Storage] Firebase Storage not ready – skipping upload.');
+        return resolve({ url: '#', path: '' });
+      }
+
+      const storagePath = `printFiles/${queueId}/${file.name}`;
+      const storageRef = storage.ref(storagePath);
+      const uploadTask = storageRef.put(file);
+
+      // Show upload progress in the submit button
+      const submitBtn = document.getElementById('btn-submit-request');
+      if (submitBtn) submitBtn.disabled = true;
+
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          if (submitBtn) submitBtn.innerText = `Mengunggah... ${progress}%`;
+        },
+        (err) => {
+          console.error('[Storage] Upload error:', err);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Kirim Permohonan';
+          }
+          reject(new Error('Gagal mengunggah file ke Firebase Storage: ' + err.message));
+        },
+        async () => {
+          const downloadUrl = await uploadTask.snapshot.ref.getDownloadURL();
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Kirim Permohonan';
+          }
+          resolve({ url: downloadUrl, path: storagePath });
+        }
+      );
+    });
   },
 
   async handleSubmit(event) {
@@ -131,13 +175,29 @@ const RequestModule = {
     };
 
     if (AppState.activeUploadTab === 'file') {
-      if (!AppState.selectedFile || !AppState.selectedFileBase64) {
+      if (!AppState.selectedFile) {
         UIModule.showToast('Harap pilih atau tarik dokumen yang akan dicetak.', 'error');
         return;
       }
+
       payload.file_name = AppState.selectedFile.name;
-      payload.file_mime = AppState.selectedFile.type;
-      payload.file_data = AppState.selectedFileBase64;
+
+      try {
+        // 1. Generate a temporary queue ID for storage path naming
+        //    (the real sequential ID will be generated inside callApi)
+        const tempId = `PRN-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-TEMP-${Date.now()}`;
+
+        // 2. Upload file to Firebase Storage first
+        UIModule.showToast('Mengunggah dokumen ke Firebase Storage...', 'info');
+        const { url, path } = await this.uploadFileToStorage(AppState.selectedFile, tempId);
+
+        payload.file_url = url;
+        payload.file_storage_path = path;
+      } catch (uploadErr) {
+        UIModule.showToast(uploadErr.message, 'error');
+        return;
+      }
+
     } else {
       const driveUrl = document.getElementById('req-drive-url')?.value;
       if (!driveUrl) {
@@ -145,10 +205,12 @@ const RequestModule = {
         return;
       }
       payload.drive_url = driveUrl;
+      payload.file_url = driveUrl;
       payload.file_name = document.getElementById('req-drive-title')?.value || 'Dokumen Google Drive';
     }
 
     try {
+      // 3. Create the Firestore document
       const res = await callApi('createPrintRequest', payload);
       UIModule.showToast(`Berhasil! Nomor Antrean: ${res.queueId}`, 'success');
       Router.switchView('status');

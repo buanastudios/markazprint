@@ -1,94 +1,340 @@
 /**
  * MARKAZ PRINTING v2.0
  * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
- * api.js - Robust REST API Client with Offline Local Mode & HTML Error Catching
+ * api.js - Firebase Firestore & Storage API Dispatcher
+ *
+ * Replaces the Google Apps Script REST API gateway.
+ * All callApi() actions now operate directly against Firestore collections
+ * and Firebase Storage. The local demo fallback is preserved for offline use.
  */
+
+// ─── Firestore Collection References ──────────────────────────────────────────
+
+const COLLECTIONS = {
+  REQUESTS: 'printRequests',
+  USERS: 'users'
+};
+
+// ─── ID Generator ─────────────────────────────────────────────────────────────
 
 /**
- * Universal Client API Communicator
+ * Generates a sequential queue ID in the format PRN-YYYYMMDD-NNNN.
+ * Uses Firestore timestamp for the date component.
+ */
+function generateQueueId(sequenceNumber) {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+  const seq = ('000' + sequenceNumber).slice(-4);
+  return `PRN-${dateStr}-${seq}`;
+}
+
+// ─── Universal API Dispatcher ─────────────────────────────────────────────────
+
+/**
+ * Central API dispatcher — routes each action to the correct Firebase operation.
+ * Maintains the same interface as the previous GAS implementation so all
+ * feature modules (dashboard, status, request, users) work without changes.
+ *
+ * @param {string} action - The action name (e.g., 'createPrintRequest')
+ * @param {Object} payload - Action-specific parameters
+ * @returns {Promise<any>} Resolved data or throws on error
  */
 async function callApi(action, payload = {}) {
-  // 1. Container execution fallback (Inside Apps Script Editor Iframe)
-  if (typeof google !== 'undefined' && google.script && google.script.run) {
-    showLoading(true);
-    return new Promise((resolve, reject) => {
-      google.script.run
-        .withSuccessHandler((response) => {
-          showLoading(false);
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            const errorMsg = response ? response.message : 'Terjadi kesalahan sistem.';
-            showToast(errorMsg, 'error');
-            reject(new Error(errorMsg));
-          }
-        })
-        .withFailureHandler((err) => {
-          showLoading(false);
-          const errorMsg = err ? err.message : 'Gagal terhubung ke server Google Apps Script.';
-          showToast(errorMsg, 'error');
-          reject(err);
-        })
-        .apiDispatcher(action, payload);
-    });
-  }
-
-  const apiUrl = (APP_CONFIG && APP_CONFIG.API_URL) ? APP_CONFIG.API_URL.trim() : '';
-
-  // 2. Offline / Local Demo Mode (GitHub Pages before API_URL is configured)
-  if (!apiUrl) {
+  // Guard: Firebase must be initialized before any call
+  if (typeof firebase === 'undefined' || !firebase.apps.length) {
+    console.warn('[API] Firebase not ready – falling back to local demo mode.');
     return handleLocalDemoMode(action, payload);
   }
 
-  // 3. Live Server Mode (Fetch POST to Google Apps Script Web App)
   showLoading(true);
+
   try {
-    const requestBody = {
-      action: action,
-      payload: payload,
-      userEmail: AppState.user ? AppState.user.email : ''
-    };
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8' // Avoids preflight OPTIONS issues with Apps Script
-      },
-      body: JSON.stringify(requestBody)
-    });
-
+    const result = await dispatchFirebaseAction(action, payload);
     showLoading(false);
-    const responseText = await response.text();
-
-    // Check if response is HTML error page (e.g. 404, 405, Google Login Redirect)
-    if (responseText.trim().startsWith('<') || responseText.includes('<!DOCTYPE html>')) {
-      console.warn('API returned HTML error page instead of JSON:', responseText.slice(0, 200));
-      throw new Error('Endpoint API mengembalikan respon HTML (Bukan JSON). Pastikan Web App diset "Who has access: Anyone".');
-    }
-
-    const result = JSON.parse(responseText);
-
-    if (result && result.success) {
-      return result.data;
-    } else {
-      const msg = result ? result.message : 'Gagal memproses data di server.';
-      showToast(msg, 'error');
-      throw new Error(msg);
-    }
+    return result;
   } catch (err) {
     showLoading(false);
-    console.error(`API Error on [${action}]:`, err);
-    showToast(err.message || 'Gagal terhubung ke API Server. Periksa API_URL di config.js.', 'error');
+    console.error(`[Firebase API Error] action="${action}":`, err);
+    showToast(err.message || 'Gagal terhubung ke Firebase. Periksa koneksi internet Anda.', 'error');
     throw err;
   }
 }
 
+// ─── Firebase Action Router ───────────────────────────────────────────────────
+
+async function dispatchFirebaseAction(action, payload) {
+  const currentUser = AppState.user || {
+    email: 'guru@tibyan.org',
+    name: 'Guru At-Tibyan',
+    role: 'USER',
+    department: 'Pengajar / Staff',
+    status: 'ACTIVE'
+  };
+
+  switch (action) {
+
+    // ── Identity ──────────────────────────────────────────────────────────────
+    case 'getCurrentUser': {
+      // With no Firebase Auth yet, we resolve from AppState (localStorage identity)
+      return Promise.resolve(currentUser);
+    }
+
+    // ── User Dashboard ────────────────────────────────────────────────────────
+    case 'getUserDashboard': {
+      const snap = await db.collection(COLLECTIONS.REQUESTS)
+        .where('user_email', '==', currentUser.email)
+        .orderBy('created_at', 'desc')
+        .limit(10)
+        .get();
+
+      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      AppState.myRequests = requests;
+
+      const stats = {
+        total: requests.length,
+        waiting: requests.filter(r => r.status === 'WAITING').length,
+        printing: requests.filter(r => r.status === 'PRINTING').length,
+        ready: requests.filter(r => r.status === 'READY').length,
+        completed: requests.filter(r => r.status === 'COMPLETED').length,
+        rejected: requests.filter(r => r.status === 'REJECTED').length
+      };
+
+      return { user: currentUser, stats, recentRequests: requests.slice(0, 5) };
+    }
+
+    // ── Admin Dashboard ───────────────────────────────────────────────────────
+    case 'getAdminDashboard': {
+      const snap = await db.collection(COLLECTIONS.REQUESTS)
+        .orderBy('created_at', 'desc')
+        .get();
+
+      const allReqs = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      AppState.allRequests = allReqs;
+
+      // Aggregate counters
+      const today = new Date().toISOString().slice(0, 10);
+      const counters = {
+        total: allReqs.length,
+        waiting: allReqs.filter(r => r.status === 'WAITING').length,
+        printing: allReqs.filter(r => r.status === 'PRINTING').length,
+        ready: allReqs.filter(r => r.status === 'READY').length,
+        completed: allReqs.filter(r => r.status === 'COMPLETED').length,
+        rejected: allReqs.filter(r => r.status === 'REJECTED').length,
+        totalCopiesPrinted: allReqs.filter(r => r.status === 'COMPLETED').reduce((s, r) => s + (parseInt(r.copies) || 0), 0),
+        todayCopiesPrinted: allReqs
+          .filter(r => r.status === 'COMPLETED' && r.created_at && r.created_at.startsWith(today))
+          .reduce((s, r) => s + (parseInt(r.copies) || 0), 0)
+      };
+
+      // Analytics
+      const analytics = {
+        paperStats: {
+          A4: allReqs.filter(r => r.paper_size === 'A4').reduce((s, r) => s + (parseInt(r.copies) || 0), 0),
+          F4: allReqs.filter(r => r.paper_size === 'F4').reduce((s, r) => s + (parseInt(r.copies) || 0), 0),
+          A5: allReqs.filter(r => r.paper_size === 'A5').reduce((s, r) => s + (parseInt(r.copies) || 0), 0)
+        },
+        colorStats: {
+          'Black White': allReqs.filter(r => r.color_mode === 'Black White').reduce((s, r) => s + (parseInt(r.copies) || 0), 0),
+          'Color': allReqs.filter(r => r.color_mode === 'Color').reduce((s, r) => s + (parseInt(r.copies) || 0), 0)
+        }
+      };
+
+      // Queued by status
+      const queues = {
+        waiting: allReqs.filter(r => r.status === 'WAITING'),
+        printing: allReqs.filter(r => r.status === 'PRINTING'),
+        ready: allReqs.filter(r => r.status === 'READY'),
+        completed: allReqs.filter(r => r.status === 'COMPLETED')
+      };
+
+      // User stats
+      const usersSnap = await db.collection(COLLECTIONS.USERS).get();
+      const usersList = usersSnap.docs.map(d => d.data());
+      const userStats = {
+        totalUsers: usersList.length,
+        totalAdmins: usersList.filter(u => u.role === 'ADMIN').length,
+        totalTeachers: usersList.filter(u => u.role === 'USER').length
+      };
+
+      return { user: currentUser, counters, analytics, queues, userStats, recentLogs: [] };
+    }
+
+    // ── My Requests ───────────────────────────────────────────────────────────
+    case 'getMyRequests': {
+      const snap = await db.collection(COLLECTIONS.REQUESTS)
+        .where('user_email', '==', currentUser.email)
+        .orderBy('created_at', 'desc')
+        .get();
+
+      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      AppState.myRequests = requests;
+      return requests;
+    }
+
+    // ── All Requests (Admin) ──────────────────────────────────────────────────
+    case 'getAllRequests': {
+      let query = db.collection(COLLECTIONS.REQUESTS).orderBy('created_at', 'desc');
+
+      if (payload.status && payload.status !== 'ALL') {
+        query = db.collection(COLLECTIONS.REQUESTS)
+          .where('status', '==', payload.status)
+          .orderBy('created_at', 'desc');
+      }
+
+      const snap = await query.get();
+      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      AppState.allRequests = requests;
+      return requests;
+    }
+
+    // ── Create Print Request ──────────────────────────────────────────────────
+    case 'createPrintRequest': {
+      // Count existing requests today for sequential ID
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const countSnap = await db.collection(COLLECTIONS.REQUESTS)
+        .where('created_at', '>=', firebase.firestore.Timestamp.fromDate(todayStart))
+        .get();
+
+      const queueId = generateQueueId(countSnap.size + 1);
+
+      const docData = {
+        request_id: queueId,
+        user_email: currentUser.email,
+        user_name: currentUser.name,
+        file_name: payload.file_name || 'Dokumen_Cetak.pdf',
+        file_url: payload.file_url || '#',  // Storage download URL, set by request.js before calling this
+        file_storage_path: payload.file_storage_path || '',
+        paper_size: payload.paper_size || 'A4',
+        orientation: payload.orientation || 'Portrait',
+        color_mode: payload.color_mode || 'Black White',
+        duplex: payload.duplex || 'Single',
+        copies: parseInt(payload.copies || 1, 10),
+        stapler: payload.stapler || 'No',
+        deadline: payload.deadline || '-',
+        notes: payload.notes || '-',
+        status: 'WAITING',
+        admin_notes: '-',
+        created_at: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const docRef = await db.collection(COLLECTIONS.REQUESTS).add(docData);
+      console.log('[Firestore] Created print request:', queueId, '| Doc ID:', docRef.id);
+
+      // Log analytics event
+      if (typeof analytics !== 'undefined') {
+        analytics.logEvent('print_request_created', {
+          paper_size: payload.paper_size,
+          color_mode: payload.color_mode,
+          copies: payload.copies
+        });
+      }
+
+      return { queueId, fileUrl: payload.file_url || '#', docId: docRef.id };
+    }
+
+    // ── Update Single Request Status ──────────────────────────────────────────
+    case 'updateRequestStatus': {
+      // Find the document with matching request_id field
+      const snap = await db.collection(COLLECTIONS.REQUESTS)
+        .where('request_id', '==', payload.request_id)
+        .limit(1)
+        .get();
+
+      if (snap.empty) {
+        throw new Error(`Permohonan ${payload.request_id} tidak ditemukan di database.`);
+      }
+
+      await snap.docs[0].ref.update({
+        status: payload.status,
+        admin_notes: payload.admin_notes || '-',
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      console.log('[Firestore] Updated status:', payload.request_id, '→', payload.status);
+      return { request_id: payload.request_id, status: payload.status };
+    }
+
+    // ── Batch Update Status ───────────────────────────────────────────────────
+    case 'batchUpdateRequestStatus': {
+      if (!payload.request_ids || !Array.isArray(payload.request_ids) || payload.request_ids.length === 0) {
+        return { updatedCount: 0, status: payload.status };
+      }
+
+      const batch = db.batch();
+      let updatedCount = 0;
+
+      // Firestore 'in' queries are limited to 30 items — chunk if needed
+      const chunkSize = 30;
+      for (let i = 0; i < payload.request_ids.length; i += chunkSize) {
+        const chunk = payload.request_ids.slice(i, i + chunkSize);
+        const snap = await db.collection(COLLECTIONS.REQUESTS)
+          .where('request_id', 'in', chunk)
+          .get();
+
+        snap.docs.forEach(doc => {
+          batch.update(doc.ref, {
+            status: payload.status,
+            admin_notes: payload.admin_notes || `Batch update ke ${payload.status}`,
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          updatedCount++;
+        });
+      }
+
+      await batch.commit();
+      console.log('[Firestore] Batch updated', updatedCount, 'documents →', payload.status);
+      return { updatedCount, status: payload.status };
+    }
+
+    // ── Get All Users ─────────────────────────────────────────────────────────
+    case 'getAllUsers': {
+      const snap = await db.collection(COLLECTIONS.USERS).orderBy('name').get();
+      const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      AppState.usersList = users;
+      return users;
+    }
+
+    // ── Update User Status ────────────────────────────────────────────────────
+    case 'updateUserStatus': {
+      await db.collection(COLLECTIONS.USERS).doc(payload.email).update({
+        status: payload.status,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return { success: true };
+    }
+
+    // ── Save / Upsert User ────────────────────────────────────────────────────
+    case 'saveUser': {
+      await db.collection(COLLECTIONS.USERS).doc(payload.email).set({
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+        department: payload.department || '',
+        status: 'ACTIVE',
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      return { success: true };
+    }
+
+    default:
+      console.warn('[Firebase API] Unknown action:', action);
+      return null;
+  }
+}
+
+// ─── Local Demo / Offline Fallback ────────────────────────────────────────────
+
 /**
- * Local Demonstration Mode Simulator
- * Allows GitHub Pages static web app to function 100% out-of-the-box
+ * Local Demonstration Mode Simulator.
+ * Activates automatically when Firebase is unreachable or not yet configured.
+ * Mirrors the full API surface so UI modules work without changes.
  */
 function handleLocalDemoMode(action, payload) {
-  console.log(`[Local Demo Mode] Dispatching action: ${action}`, payload);
+  console.log(`[Local Demo Mode] action: ${action}`, payload);
 
   const currentUser = AppState.user || {
     email: 'guru@tibyan.org',
@@ -105,10 +351,8 @@ function handleLocalDemoMode(action, payload) {
         request_id: 'PRN-20260803-0001',
         user_email: 'guru@tibyan.org',
         user_name: 'Guru At-Tibyan',
-        file_id: 'sample_file_1',
         file_name: 'Soal_Ujian_IPA_Kelas_8.pdf',
         file_url: '#',
-        file_mime: 'application/pdf',
         paper_size: 'A4',
         orientation: 'Portrait',
         color_mode: 'Black White',
@@ -125,10 +369,8 @@ function handleLocalDemoMode(action, payload) {
         request_id: 'PRN-20260803-0002',
         user_email: 'guru@tibyan.org',
         user_name: 'Guru At-Tibyan',
-        file_id: 'sample_file_2',
         file_name: 'Modul_Pembelajaran_Tahfizh.docx',
         file_url: '#',
-        file_mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         paper_size: 'F4',
         orientation: 'Portrait',
         color_mode: 'Color',
@@ -177,19 +419,17 @@ function handleLocalDemoMode(action, payload) {
     case 'getAllRequests':
       return Promise.resolve(AppState.allRequests);
 
-    case 'createPrintRequest':
+    case 'createPrintRequest': {
       const newSeq = ('000' + (AppState.allRequests.length + 1)).slice(-4);
-      const todayStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const newQueueId = `PRN-${todayStr}-${newSeq}`;
 
       const newReq = {
         request_id: newQueueId,
         user_email: currentUser.email,
         user_name: currentUser.name,
-        file_id: 'demo_file_' + Date.now(),
         file_name: payload.file_name || 'Dokumen_Cetak.pdf',
-        file_url: payload.drive_url || '#',
-        file_mime: payload.file_mime || 'application/pdf',
+        file_url: payload.file_url || '#',
         paper_size: payload.paper_size || 'A4',
         orientation: payload.orientation || 'Portrait',
         color_mode: payload.color_mode || 'Black White',
@@ -205,16 +445,17 @@ function handleLocalDemoMode(action, payload) {
 
       AppState.myRequests.unshift(newReq);
       AppState.allRequests.unshift(newReq);
-
       return Promise.resolve({ queueId: newQueueId, fileUrl: newReq.file_url });
+    }
 
-    case 'updateRequestStatus':
+    case 'updateRequestStatus': {
       const targetReq = AppState.allRequests.find(r => r.request_id === payload.request_id);
       if (targetReq) {
         targetReq.status = payload.status;
         targetReq.admin_notes = payload.admin_notes || '-';
       }
       return Promise.resolve({ request_id: payload.request_id, status: payload.status });
+    }
 
     case 'batchUpdateRequestStatus':
       if (payload.request_ids && Array.isArray(payload.request_ids)) {

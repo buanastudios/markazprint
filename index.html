@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#343a40">
+  <meta name="description" content="Markaz Printing v2.0 – Sistem Permohonan Cetak Digital Yayasan T.I.B.Y.A.N. Powered by Buana Studios.">
   <title>Markaz Printing v2.0 - Buana Studios | Yayasan T.I.B.Y.A.N.</title>
 
   <!-- Google Fonts & AdminLTE 3 / 4 Master CSS Design System -->
@@ -53,7 +54,21 @@
     }
   </style>
 
-  <!-- Modular JavaScript Engine & Feature Module Inclusions -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Firebase SDK (Compat/UMD CDN — no bundler required)
+       Must be loaded BEFORE firebase.js and all app scripts.
+  ════════════════════════════════════════════════════════════════════════ -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+
+  <!-- Firebase App Initialization (exposes global: db, storage, analytics) -->
+  <script src="js/firebase.js"></script>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       Modular JavaScript Engine & Feature Module Inclusions
+  ════════════════════════════════════════════════════════════════════════ -->
   <script src="js/config.js"></script>
   <script src="js/api.js"></script>
   <script src="js/template-engine.js"></script>
@@ -67,3 +82,4 @@
 
 </body>
 </html>
+
