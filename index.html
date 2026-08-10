@@ -7,36 +7,34 @@
   <meta name="description" content="Markaz Printing v3.0 – Sistem Permohonan Cetak Digital Yayasan T.I.B.Y.A.N. Powered by Buana Studios.">
   <title>Markaz Printing v3.0 - Buana Studios | Yayasan T.I.B.Y.A.N.</title>
 
-  <!-- ── Performance: DNS Prefetch & Preconnect for external domains ── -->
+  <!-- ══ DNS / Preconnect: warm up external connections before any JS runs ══ -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://www.gstatic.com">
   <link rel="dns-prefetch" href="https://firestore.googleapis.com">
-  <link rel="dns-prefetch" href="https://script.google.com">
+  <link rel="dns-prefetch" href="https://firebase.googleapis.com">
 
-  <!-- ── Google Fonts: non-blocking (display=swap prevents FOIT) ── -->
+  <!-- ══ Google Fonts: non-blocking via media=print swap trick ══ -->
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Google+Sans:wght@500;700&display=swap"
     media="print" onload="this.media='all'">
-  <!-- Fallback for browsers with JS disabled -->
   <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Google+Sans:wght@500;700&display=swap">
   </noscript>
 
-  <!-- App CSS (no @import inside — fonts moved to <link> above) -->
+  <!-- ══ App CSS ══ -->
   <link rel="stylesheet" href="css/style.css">
 
-  <!-- ── Inline critical spin animation so loader shows instantly ── -->
+  <!-- ══ Critical inline CSS: loader visible on very first paint ══ -->
   <style>
-    @keyframes spin {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes skeleton-pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .skeleton { background: linear-gradient(90deg,#e9ecef 25%,#f8f9fa 50%,#e9ecef 75%); background-size:200% 100%; animation:skeleton-pulse 1.4s ease infinite; border-radius:4px; }
   </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 
-  <!-- AdminLTE Main Layout Wrapper -->
+  <!-- ══ App Layout Shell ══ -->
   <div class="wrapper" id="app-root">
     <div id="header-slot"></div>
     <div id="nav-mobile-slot"></div>
@@ -49,30 +47,428 @@
     </div>
   </div>
 
-  <!-- Global Fullscreen Loader Overlay (visible immediately on paint) -->
-  <div id="global-loader" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-    <div style="width:48px;height:48px;border:5px solid #dee2e6;border-top-color:#007bff;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <!-- ══ Global loader (renders immediately — no JS needed) ══ -->
+  <div id="global-loader" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:#fff;z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="width:48px;height:48px;border:5px solid #dee2e6;border-top-color:#007bff;border-radius:50%;animation:spin .8s linear infinite;"></div>
     <div style="font-size:14px;font-weight:600;color:#343a40;">Memuat Markaz Printing v3.0...</div>
   </div>
 
-  <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
-
-  <!-- Modals & Dialogs Component Slot -->
   <div id="modals-slot"></div>
 
-  <!-- ════════════════════════════════════════════════════════════════════
-       Firebase SDK — defer lets browser download all scripts IN PARALLEL
-       while keeping the execution ORDER (app→firestore→analytics→firebase.js)
-       ════════════════════════════════════════════════════════════════════ -->
+  <!-- ════════════════════════════════════════════════════════════════════════
+       INLINED HTML TEMPLATES — zero network fetches, read by template-engine.js
+       The <template> tag is inert (not rendered). TemplateEngine checks these
+       before making any fetch() call, eliminating all template round-trips.
+  ════════════════════════════════════════════════════════════════════════ -->
+
+  <template data-src="views/header.html">
+    <header class="main-header">
+      <div class="navbar-left">
+        <button class="sidebar-toggle-btn" id="sidebar-toggle" onclick="Router.toggleSidebar()" title="Toggle Sidebar Navigation">☰</button>
+        <div class="navbar-brand-title">
+          Markaz Printing <span style="font-size:11px;font-weight:normal;color:var(--text-muted);">by Buana Studios • Yayasan T.I.B.Y.A.N.</span>
+        </div>
+      </div>
+      <div class="header-user">
+        <div class="user-badge" style="cursor:pointer;" onclick="UIModule.openModal('modal-switch-identity')" title="Klik untuk ganti profil / role akses">
+          <span class="user-name" id="hdr-user-name">Guru / Staff ⚙️</span>
+          <span class="user-role-chip role-user" id="hdr-user-role">USER</span>
+        </div>
+      </div>
+    </header>
+  </template>
+
+  <template data-src="views/nav-mobile.html">
+    <aside class="main-sidebar" id="app-sidebar">
+      <a href="#" class="brand-link">
+        <div class="brand-image">🖨️</div>
+        <span class="brand-text font-weight-light">Markaz Printing <small style="font-size:10px;opacity:.8;">v3.0</small></span>
+      </a>
+      <div class="user-panel" onclick="UIModule.openModal('modal-switch-identity')" title="Klik untuk ganti profil / role akses">
+        <div class="user-avatar" id="sb-user-initial">G</div>
+        <div class="user-info">
+          <div class="user-info-name" id="sb-user-name">Guru / Staff</div>
+          <div class="user-info-role" id="sb-user-role">USER • Yayasan T.I.B.Y.A.N.</div>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="nav-header">MENU UTAMA</li>
+        <li class="nav-item">
+          <button class="nav-link active" data-view="dashboard" onclick="Router.switchView('dashboard')">
+            <span class="nav-icon">📊</span><p>Dashboard</p>
+          </button>
+        </li>
+        <li class="nav-item nav-btn-request">
+          <button class="nav-link" data-view="request" onclick="Router.switchView('request')">
+            <span class="nav-icon">➕</span><p>Buat Permohonan Cetak</p>
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-view="status" onclick="Router.switchView('status')">
+            <span class="nav-icon">📋</span><p>Status &amp; Riwayat Cetak</p>
+          </button>
+        </li>
+        <li class="nav-header" style="margin-top:16px;">SISTEM &amp; AKUN</li>
+        <li class="nav-item">
+          <button class="nav-link" onclick="UIModule.openModal('modal-switch-identity')">
+            <span class="nav-icon">⚙️</span><p>Ganti Peran / Profil</p>
+          </button>
+        </li>
+      </ul>
+    </aside>
+  </template>
+
+  <template data-src="views/dashboard.html">
+    <div id="view-dashboard" class="app-view" style="display:block;">
+      <div class="content-header">
+        <div class="content-title"><span>📊</span><span>Dashboard Utama</span></div>
+        <div class="content-subtitle" id="dash-welcome-sub">Layanan Pencetakan Dokumen by Buana Studios untuk Yayasan T.I.B.Y.A.N.</div>
+      </div>
+      <div class="callout callout-info">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h5 id="dash-welcome-name" style="margin:0;font-size:16px;font-weight:700;">Assalamu'alaikum...</h5>
+            <p style="margin:4px 0 0;font-size:13px;color:var(--text-muted);">Selamat Datang di Sistem Informasi Pencetakan Markaz Printing.</p>
+          </div>
+          <div id="dash-quick-action-area" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary nav-btn-request" onclick="Router.switchView('request')"><span>➕</span><span>Cetak Dokumen Baru</span></button>
+            <button class="btn btn-secondary" onclick="UIModule.openModal('modal-switch-identity')"><span>⚙️</span><span>Ganti Peran</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="small-box-grid" id="dash-metrics-grid">
+        <div class="small-box bg-info" onclick="Router.switchView('status')">
+          <div class="inner"><h3 id="metric-waiting-val">–</h3><p>Menunggu (Waiting)</p></div>
+          <div class="icon-watermark">⏳</div>
+          <a href="#" class="small-box-footer" onclick="Router.switchView('status')">Lihat Antrean →</a>
+        </div>
+        <div class="small-box bg-warning" onclick="Router.switchView('status')">
+          <div class="inner"><h3 id="metric-printing-val">–</h3><p>Proses Cetak (Printing)</p></div>
+          <div class="icon-watermark">🖨️</div>
+          <a href="#" class="small-box-footer" onclick="Router.switchView('status')">Lihat Antrean →</a>
+        </div>
+        <div class="small-box bg-success" onclick="Router.switchView('status')">
+          <div class="inner"><h3 id="metric-ready-val">–</h3><p>Siap Diambil (Ready)</p></div>
+          <div class="icon-watermark">📦</div>
+          <a href="#" class="small-box-footer" onclick="Router.switchView('status')">Lihat Antrean →</a>
+        </div>
+        <div class="small-box bg-secondary" onclick="Router.switchView('status')">
+          <div class="inner"><h3 id="metric-completed-val">–</h3><p>Selesai (Completed)</p></div>
+          <div class="icon-watermark">✅</div>
+          <a href="#" class="small-box-footer" onclick="Router.switchView('status')">Lihat History →</a>
+        </div>
+      </div>
+      <div id="dash-main-sections">
+        <!-- Skeleton placeholder while Firestore loads -->
+        <div class="card card-outline-primary">
+          <div class="card-body" style="padding:20px;">
+            <div class="skeleton" style="height:18px;width:40%;margin-bottom:12px;"></div>
+            <div class="skeleton" style="height:14px;width:100%;margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:14px;width:85%;margin-bottom:8px;"></div>
+            <div class="skeleton" style="height:14px;width:70%;"></div>
+          </div>
+        </div>
+      </div>
+      <button class="fab-btn nav-btn-request" onclick="Router.switchView('request')" title="Buat Permohonan Cetak Baru">➕</button>
+    </div>
+  </template>
+
+  <template data-src="views/request.html">
+    <div id="view-request" class="app-view" style="display:none;">
+      <div class="content-header">
+        <div class="content-title"><span>🖨️</span><span>Buat Permohonan Cetak Dokumen Baru</span></div>
+        <div class="content-subtitle">Unggah dokumen atau tautkan Google Drive untuk diproses oleh Sekretariat.</div>
+      </div>
+      <div class="card card-outline-primary">
+        <div class="card-header">
+          <h3 class="card-title"><span>📄</span><span>Form Spesifikasi &amp; Pengunggahan Dokumen</span></h3>
+        </div>
+        <div class="card-body">
+          <div class="tab-group">
+            <button type="button" class="tab-btn active" id="tab-btn-file" onclick="RequestModule.switchUploadTab('file')">📁 Unggah File Lokal (Drag &amp; Drop)</button>
+            <button type="button" class="tab-btn" id="tab-btn-link" onclick="RequestModule.switchUploadTab('link')">🔗 Tautan Google Drive / Docs</button>
+          </div>
+          <form id="form-new-request" onsubmit="RequestModule.handleSubmit(event)">
+            <div id="upload-mode-file" class="form-group">
+              <label class="form-label">Dokumen Cetak <span style="color:var(--adminlte-danger);">*</span></label>
+              <div id="uploader-drop-box" class="file-uploader" onclick="document.getElementById('file-input-field').click()">
+                <div class="file-uploader-icon" style="font-size:36px;color:var(--adminlte-primary);">📁</div>
+                <div style="font-weight:700;font-size:14px;color:var(--adminlte-dark);margin-top:4px;">Klik atau Tarik File ke Sini</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Format didukung: PDF, DOCX, XLSX, TXT (Maks. 25 MB)</div>
+                <input type="file" id="file-input-field" style="display:none;" onchange="RequestModule.handleFileSelect(event)" accept=".pdf,.docx,.doc,.xlsx,.xls,.txt">
+              </div>
+              <div id="selected-file-info" class="selected-file-card" style="display:none;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span style="font-size:24px;">📄</span>
+                  <div>
+                    <div id="file-card-name" style="font-weight:700;font-size:13px;">file.pdf</div>
+                    <div id="file-card-size" style="font-size:11px;color:var(--text-muted);">120 KB</div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="RequestModule.removeSelectedFile()">Hapus</button>
+              </div>
+            </div>
+            <div id="upload-mode-link" class="form-group" style="display:none;">
+              <label class="form-label">Tautan Google Drive / Google Docs / Sheets <span style="color:var(--adminlte-danger);">*</span></label>
+              <input type="url" id="req-drive-url" class="form-control" placeholder="https://docs.google.com/document/d/.../edit">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Pastikan akses tautan Google Drive telah diatur ke "Siapa saja yang memiliki link".</div>
+              <div style="margin-top:12px;">
+                <label class="form-label">Judul Dokumen (Opsional)</label>
+                <input type="text" id="req-drive-title" class="form-control" placeholder="Contoh: Soal Ujian Semester Ganjil - IPA Class 8">
+              </div>
+            </div>
+            <hr style="border:0;border-top:1px solid var(--border-light);margin:20px 0;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Ukuran Kertas <span style="color:var(--adminlte-danger);">*</span></label>
+                <div class="chip-group">
+                  <input type="radio" id="ps-a4" name="paper_size" value="A4" class="chip-radio" checked><label for="ps-a4" class="chip-label">A4</label>
+                  <input type="radio" id="ps-f4" name="paper_size" value="F4" class="chip-radio"><label for="ps-f4" class="chip-label">F4 (Folio)</label>
+                  <input type="radio" id="ps-a5" name="paper_size" value="A5" class="chip-radio"><label for="ps-a5" class="chip-label">A5</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Orientasi <span style="color:var(--adminlte-danger);">*</span></label>
+                <div class="chip-group">
+                  <input type="radio" id="ori-port" name="orientation" value="Portrait" class="chip-radio" checked><label for="ori-port" class="chip-label">Portrait (Tegak)</label>
+                  <input type="radio" id="ori-land" name="orientation" value="Landscape" class="chip-radio"><label for="ori-land" class="chip-label">Landscape (Mendatar)</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Warna Cetak <span style="color:var(--adminlte-danger);">*</span></label>
+                <div class="chip-group">
+                  <input type="radio" id="clr-bw" name="color_mode" value="Black White" class="chip-radio" checked><label for="clr-bw" class="chip-label">Hitam Putih (B/W)</label>
+                  <input type="radio" id="clr-fc" name="color_mode" value="Color" class="chip-radio"><label for="clr-fc" class="chip-label">Full Color</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sisi Cetak <span style="color:var(--adminlte-danger);">*</span></label>
+                <div class="chip-group">
+                  <input type="radio" id="dup-single" name="duplex" value="Single" class="chip-radio" checked><label for="dup-single" class="chip-label">1 Sisi (Single)</label>
+                  <input type="radio" id="dup-double" name="duplex" value="Double" class="chip-radio"><label for="dup-double" class="chip-label">2 Sisi (Bolak-Balik)</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="req-copies">Jumlah Rangkap (Copies) <span style="color:var(--adminlte-danger);">*</span></label>
+                <input type="number" id="req-copies" class="form-control" value="1" min="1" max="500" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Finishing Stapler / Hecter</label>
+                <div class="chip-group">
+                  <input type="radio" id="stp-no" name="stapler" value="No" class="chip-radio" checked><label for="stp-no" class="chip-label">Tanpa Stapler</label>
+                  <input type="radio" id="stp-yes" name="stapler" value="Yes" class="chip-radio"><label for="stp-yes" class="chip-label">Stapler / Hecter</label>
+                </div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+              <div class="form-group">
+                <label class="form-label" for="req-deadline">Batas Waktu Diperlukan (Deadline) <span style="color:var(--adminlte-danger);">*</span></label>
+                <input type="datetime-local" id="req-deadline" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="req-notes">Catatan Tambahan Sekretariat</label>
+                <textarea id="req-notes" class="form-control" rows="2" placeholder="Contoh: Tolong jilid klip di pojok kiri atas..."></textarea>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:10px;">
+              <button type="button" class="btn btn-secondary" onclick="Router.switchView('dashboard')">Batal</button>
+              <button type="submit" id="btn-submit-request" class="btn btn-primary">
+                <span>🚀</span><span>Kirim Permohonan Cetak</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template data-src="views/status.html">
+    <div id="view-status" class="app-view" style="display:none;">
+      <div class="content-header">
+        <div class="content-title"><span>📋</span><span>Daftar Status &amp; Riwayat Cetak</span></div>
+        <div class="content-subtitle">Pantau dan kelola seluruh antrean permohonan pencetakan dokumen.</div>
+      </div>
+      <div class="card card-outline-primary">
+        <div class="card-header">
+          <h3 class="card-title"><span>📑</span><span>Tabel Permohonan Dokumen</span></h3>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" onclick="StatusModule.exportSummaryReport()">📥 Ekspor CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="StatusModule.loadData()">🔄 Refresh</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-bottom:16px;">
+            <div class="chip-group" id="status-filter-chips">
+              <input type="radio" id="st-all" name="filter_status" value="ALL" class="chip-radio" checked onchange="StatusModule.handleFilterChange(this.value)"><label for="st-all" class="chip-label">Semua</label>
+              <input type="radio" id="st-waiting" name="filter_status" value="WAITING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)"><label for="st-waiting" class="chip-label">Waiting</label>
+              <input type="radio" id="st-printing" name="filter_status" value="PRINTING" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)"><label for="st-printing" class="chip-label">Printing</label>
+              <input type="radio" id="st-ready" name="filter_status" value="READY" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)"><label for="st-ready" class="chip-label">Ready</label>
+              <input type="radio" id="st-completed" name="filter_status" value="COMPLETED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)"><label for="st-completed" class="chip-label">Completed</label>
+              <input type="radio" id="st-rejected" name="filter_status" value="REJECTED" class="chip-radio" onchange="StatusModule.handleFilterChange(this.value)"><label for="st-rejected" class="chip-label">Bermasalah</label>
+            </div>
+            <div style="min-width:220px;flex:1;max-width:320px;">
+              <input type="text" id="status-search-input" class="form-control" placeholder="Cari Antrean / Nama / File..." onkeyup="StatusModule.handleSearch(this.value)">
+            </div>
+          </div>
+          <div id="batch-action-toolbar" class="batch-toolbar" style="display:none;">
+            <span id="batch-selected-count" style="font-weight:700;color:var(--adminlte-primary);">0 Antrean Dipilih</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="StatusModule.executeBatchUpdate('PRINTING')">⚡ Tandai PRINTING</button>
+              <button class="btn btn-success btn-sm" onclick="StatusModule.executeBatchUpdate('READY')">📦 Tandai READY</button>
+              <button class="btn btn-secondary btn-sm" onclick="StatusModule.executeBatchUpdate('COMPLETED')">✅ Tandai COMPLETED</button>
+            </div>
+          </div>
+          <div id="requests-list-container">
+            <!-- Skeleton rows while Firestore loads -->
+            <div style="display:flex;flex-direction:column;gap:8px;padding:8px 0;">
+              <div class="skeleton" style="height:48px;width:100%;border-radius:6px;"></div>
+              <div class="skeleton" style="height:48px;width:100%;border-radius:6px;"></div>
+              <div class="skeleton" style="height:48px;width:100%;border-radius:6px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template data-src="views/modals.html">
+    <div>
+      <div id="modal-switch-identity" class="modal-overlay">
+        <div class="modal-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-family:var(--font-heading);font-size:18px;">👤 Ganti Profil / Role Akses</h3>
+            <button type="button" style="background:none;border:none;font-size:20px;cursor:pointer;" onclick="UIModule.closeModal('modal-switch-identity')">&times;</button>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Pilih peran akses Anda untuk menggunakan aplikasi Markaz Printing.</p>
+          <div class="form-group">
+            <label class="form-label">Email Google <span class="required">*</span></label>
+            <input type="email" id="id-switch-email" class="form-control" value="guru@tibyan.org" placeholder="email@tibyan.org">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+            <input type="text" id="id-switch-name" class="form-control" value="Guru At-Tibyan" placeholder="Nama Lengkap">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Peran / Role Akses <span class="required">*</span></label>
+            <select id="id-switch-role" class="form-control">
+              <option value="USER">USER (Guru / Staff - Buat &amp; Pantau Cetakan)</option>
+              <option value="ADMIN">ADMIN (Sekretariat - Kelola Antrean &amp; User)</option>
+              <option value="VIEWER">VIEWER (Kepala Sekolah - Analisis Eksekutif)</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="UIModule.closeModal('modal-switch-identity')">Batal</button>
+            <button type="button" class="btn btn-primary" onclick="UserModule.saveActiveIdentity()">Gunakan Profil Ini</button>
+          </div>
+        </div>
+      </div>
+      <div id="modal-update-status" class="modal-overlay">
+        <div class="modal-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-family:var(--font-heading);font-size:18px;">Ubah Status Permohonan</h3>
+            <button type="button" style="background:none;border:none;font-size:20px;cursor:pointer;" onclick="UIModule.closeModal('modal-update-status')">&times;</button>
+          </div>
+          <input type="hidden" id="modal-status-req-id">
+          <div class="form-group">
+            <label class="form-label">Nomor Antrean</label>
+            <input type="text" id="modal-status-req-display" class="form-control" readonly style="background:var(--adminlte-light);">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Status Baru <span class="required">*</span></label>
+            <select id="modal-status-select" class="form-control">
+              <option value="WAITING">WAITING (Menunggu Verifikasi)</option>
+              <option value="VERIFIED">VERIFIED (Telah Terverifikasi)</option>
+              <option value="PRINTING">PRINTING (Sedang Dicetak)</option>
+              <option value="READY">READY (Siap Diambil)</option>
+              <option value="COMPLETED">COMPLETED (Selesai)</option>
+              <option value="REJECTED">REJECTED (Bermasalah / Ditolak)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Catatan Sekretariat / Alasan Update</label>
+            <textarea id="modal-status-notes" class="form-control" rows="3" placeholder="Masukkan catatan update..."></textarea>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="UIModule.closeModal('modal-update-status')">Batal</button>
+            <button type="button" class="btn btn-primary" onclick="StatusModule.submitStatusUpdate()">Simpan Perubahan</button>
+          </div>
+        </div>
+      </div>
+      <div id="modal-report-trouble" class="modal-overlay">
+        <div class="modal-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-family:var(--font-heading);font-size:18px;color:var(--adminlte-danger);">⚠️ Laporkan Kendala / Trouble Cetak</h3>
+            <button type="button" style="background:none;border:none;font-size:20px;cursor:pointer;" onclick="UIModule.closeModal('modal-report-trouble')">&times;</button>
+          </div>
+          <input type="hidden" id="trouble-req-id">
+          <div class="form-group">
+            <label class="form-label">Nomor Antrean Kendala</label>
+            <input type="text" id="trouble-req-display" class="form-control" readonly style="background:var(--adminlte-light);font-weight:700;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pilih Jenis Kendala / Masalah <span class="required">*</span></label>
+            <select id="trouble-preset-select" class="form-control" onchange="StatusModule.handleTroublePresetChange(this.value)">
+              <option value="Tinta / Toner Printer Habis">Tinta / Toner Printer Habis</option>
+              <option value="Stok Kertas (A4/F4/A5) Habis">Stok Kertas (A4/F4/A5) Habis</option>
+              <option value="File Dokumen Terkunci / Corrupt / Password">File Dokumen Terkunci / Corrupt / Password</option>
+              <option value="Printer Macet (Paper Jam) / Error Mesin">Printer Macet (Paper Jam) / Error Mesin</option>
+              <option value="Ukuran Kertas Tidak Sesuai Spesifikasi">Ukuran Kertas Tidak Sesuai Spesifikasi</option>
+              <option value="CUSTOM">Lainnya (Ketik sendiri di bawah...)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Penjelasan Kendala <span class="required">*</span></label>
+            <textarea id="trouble-custom-notes" class="form-control" rows="3">Tinta / Toner Printer Habis</textarea>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="UIModule.closeModal('modal-report-trouble')">Batal</button>
+            <button type="button" class="btn btn-danger" onclick="StatusModule.submitTroubleReport()">Simpan Kendala (Set Status REJECTED)</button>
+          </div>
+        </div>
+      </div>
+      <div id="modal-manage-users" class="modal-overlay">
+        <div class="modal-box" style="max-width:640px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-family:var(--font-heading);font-size:18px;">Manajemen Pengguna Aplikasi</h3>
+            <button type="button" style="background:none;border:none;font-size:20px;cursor:pointer;" onclick="UIModule.closeModal('modal-manage-users')">&times;</button>
+          </div>
+          <form id="form-user-save" onsubmit="UserModule.handleUserSaveSubmit(event)" style="background:var(--adminlte-light);padding:16px;border-radius:4px;margin-bottom:20px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Tambah / Edit Pengguna</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+              <div><label class="form-label">Email Google <span class="required">*</span></label><input type="email" id="u-form-email" class="form-control" required placeholder="user@gmail.com"></div>
+              <div><label class="form-label">Nama Lengkap <span class="required">*</span></label><input type="text" id="u-form-name" class="form-control" required placeholder="Nama Pengguna"></div>
+              <div><label class="form-label">Role Akses <span class="required">*</span></label>
+                <select id="u-form-role" class="form-control">
+                  <option value="USER">USER (Guru / Staff)</option>
+                  <option value="ADMIN">ADMIN (Sekretariat)</option>
+                  <option value="VIEWER">VIEWER (Kepala Sekolah)</option>
+                </select>
+              </div>
+              <div><label class="form-label">Unit / Departemen</label><input type="text" id="u-form-dept" class="form-control" placeholder="Pengajar SD/SMP"></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+              <button type="submit" class="btn btn-primary btn-sm">Simpan Pengguna</button>
+            </div>
+          </form>
+          <div id="users-table-container">
+            <div style="text-align:center;padding:20px;">Memuat pengguna...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       Firebase SDK — all deferred: downloads happen in parallel,
+       execution stays ordered (app → firestore → analytics → firebase.js)
+  ════════════════════════════════════════════════════════════════════════ -->
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
   <script defer src="js/firebase.js"></script>
 
-  <!-- ════════════════════════════════════════════════════════════════════
-       App scripts — all deferred, downloaded in parallel, run in order
-       ════════════════════════════════════════════════════════════════════ -->
+  <!-- App modules — all deferred, parallel download, ordered execution -->
   <script defer src="js/config.js"></script>
   <script defer src="js/api.js"></script>
   <script defer src="js/template-engine.js"></script>
