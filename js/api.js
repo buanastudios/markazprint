@@ -192,15 +192,8 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── Create Print Request ──────────────────────────────────────────────────
     case 'createPrintRequest': {
-      // Count existing requests today for sequential ID
-      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      const countSnap = await db.collection(COLLECTIONS.REQUESTS)
-        .where('created_at', '>=', firebase.firestore.Timestamp.fromDate(todayStart))
-        .get();
-
+      // Count existing requests for sequential ID safely
+      const countSnap = await db.collection(COLLECTIONS.REQUESTS).get();
       const queueId = generateQueueId(countSnap.size + 1);
 
       const docData = {
@@ -294,8 +287,8 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── Get All Users ─────────────────────────────────────────────────────────
     case 'getAllUsers': {
-      const snap = await db.collection(COLLECTIONS.USERS).orderBy('name').get();
-      const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const snap = await db.collection(COLLECTIONS.USERS).get();
+      const users = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
       AppState.usersList = users;
       return users;
     }
