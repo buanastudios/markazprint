@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── printRequests collection ──────────────────────────────────────────────
+    // Any authenticated (or for now: any) user can read/write.
+    // TODO: Tighten when Firebase Auth is added:
+    //   allow read: if request.auth != null && resource.data.user_email == request.auth.token.email;
+    //   allow create: if request.auth != null;
+    //   allow update: if request.auth != null && request.auth.token.admin == true;
+    match /printRequests/{docId} {
+      allow read, write: if true;
+    }
+
+    // ── users collection ──────────────────────────────────────────────────────
+    match /users/{email} {
+      allow read, write: if true;
+    }
+
+  }
+}

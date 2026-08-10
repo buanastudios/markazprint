@@ -238,6 +238,36 @@ const StatusModule = {
     UIModule.openModal('modal-report-trouble');
   },
 
+  openStatusModal(reqId) {
+    document.getElementById('modal-status-req-id').value = reqId;
+    document.getElementById('modal-status-req-display').value = reqId;
+    UIModule.openModal('modal-update-status');
+  },
+
+  async submitStatusUpdate() {
+    const reqId = document.getElementById('modal-status-req-id').value;
+    const status = document.getElementById('modal-status-select').value;
+    const notes = document.getElementById('modal-status-notes').value;
+
+    if (!status) {
+      UIModule.showToast('Harap pilih status baru.', 'error');
+      return;
+    }
+
+    try {
+      await callApi('updateRequestStatus', {
+        request_id: reqId,
+        status: status,
+        admin_notes: notes || `Status diubah ke ${status}`
+      });
+      UIModule.closeModal('modal-update-status');
+      UIModule.showToast(`Status ${reqId} diubah ke ${status}.`, 'success');
+      await this.loadData();
+    } catch (e) {
+      console.error(e);
+    }
+  },
+
   handleTroublePresetChange(val) {
     const textarea = document.getElementById('trouble-custom-notes');
     textarea.value = (val === 'CUSTOM' ? '' : val);

@@ -81,13 +81,15 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── User Dashboard ────────────────────────────────────────────────────────
     case 'getUserDashboard': {
+      // Uses only a single-field where clause to avoid needing a composite index
       const snap = await db.collection(COLLECTIONS.REQUESTS)
         .where('user_email', '==', currentUser.email)
-        .orderBy('created_at', 'desc')
-        .limit(10)
         .get();
 
-      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      const requests = snap.docs
+        .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        .slice(0, 10);
       AppState.myRequests = requests;
 
       const stats = {
@@ -104,11 +106,11 @@ async function dispatchFirebaseAction(action, payload) {
 
     // ── Admin Dashboard ───────────────────────────────────────────────────────
     case 'getAdminDashboard': {
-      const snap = await db.collection(COLLECTIONS.REQUESTS)
-        .orderBy('created_at', 'desc')
-        .get();
+      const snap = await db.collection(COLLECTIONS.REQUESTS).get();
 
-      const allReqs = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      const allReqs = snap.docs
+        .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       AppState.allRequests = allReqs;
 
       // Aggregate counters
@@ -163,26 +165,27 @@ async function dispatchFirebaseAction(action, payload) {
     case 'getMyRequests': {
       const snap = await db.collection(COLLECTIONS.REQUESTS)
         .where('user_email', '==', currentUser.email)
-        .orderBy('created_at', 'desc')
         .get();
 
-      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
+      const requests = snap.docs
+        .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       AppState.myRequests = requests;
       return requests;
     }
 
     // ── All Requests (Admin) ──────────────────────────────────────────────────
     case 'getAllRequests': {
-      let query = db.collection(COLLECTIONS.REQUESTS).orderBy('created_at', 'desc');
+      // Fetch all then filter client-side to avoid composite index requirements
+      const snap = await db.collection(COLLECTIONS.REQUESTS).get();
+      let requests = snap.docs
+        .map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }))
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
       if (payload.status && payload.status !== 'ALL') {
-        query = db.collection(COLLECTIONS.REQUESTS)
-          .where('status', '==', payload.status)
-          .orderBy('created_at', 'desc');
+        requests = requests.filter(r => r.status === payload.status);
       }
 
-      const snap = await query.get();
-      const requests = snap.docs.map(d => ({ id: d.id, ...d.data(), created_at: d.data().created_at?.toDate?.()?.toISOString() || new Date().toISOString() }));
       AppState.allRequests = requests;
       return requests;
     }

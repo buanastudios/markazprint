@@ -652,8 +652,10 @@ html, body {
   animation: slideUp 0.3s ease-out;
 }
 
-.toast-success { background-color: var(--adminlte-success); }
-.toast-error { background-color: var(--adminlte-danger); }
+.toast-success  { background-color: var(--adminlte-success); }
+.toast-error    { background-color: var(--adminlte-danger); }
+.toast-warning  { background-color: var(--adminlte-warning); color: #212529; }
+.toast-info     { background-color: var(--adminlte-info); }
 
 @keyframes slideUp {
   from { transform: translateY(100%); opacity: 0; }
