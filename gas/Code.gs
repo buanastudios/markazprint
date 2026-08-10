@@ -31,6 +31,16 @@ var DRIVE_FOLDER_ID = 'YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE';
 // ─── Web App Entry Points ──────────────────────────────────────────────────────
 
 /**
+ * RUN THIS FUNCTION ONCE IN THE APPS SCRIPT EDITOR!
+ * Select 'testDriveAuthorization' from the dropdown at the top, and click ▶ Run.
+ * This triggers Google's 'Authorization Required' dialog so you can grant Google Drive permissions.
+ */
+function testDriveAuthorization() {
+  var root = DriveApp.getRootFolder();
+  Logger.log('Drive Authorization OK! Root folder name: ' + root.getName());
+}
+
+/**
  * Handles HTTP GET requests.
  * Used as a health-check to verify the Web App is deployed correctly.
  */
