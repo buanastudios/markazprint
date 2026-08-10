@@ -114,21 +114,34 @@ function uploadFileToDrive(payload) {
   var decodedBytes = Utilities.base64Decode(base64Data);
   var blob = Utilities.newBlob(decodedBytes, payload.file_mime || 'application/octet-stream', payload.file_name);
 
-  // 3. Get (or fallback to root) the target Drive folder
+  // 3. Get target Drive folder or fallback to Drive root safely
   var folder;
-  try {
-    folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  } catch (folderErr) {
-    // Fallback: upload to Drive root if folder ID is wrong
-    Logger.log('Warning: Could not find folder ' + DRIVE_FOLDER_ID + '. Uploading to root. Error: ' + folderErr.message);
+  if (DRIVE_FOLDER_ID && DRIVE_FOLDER_ID !== 'YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE') {
+    try {
+      folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    } catch (folderErr) {
+      Logger.log('Folder ID invalid or inaccessible. Using root folder.');
+      folder = DriveApp.getRootFolder();
+    }
+  } else {
     folder = DriveApp.getRootFolder();
   }
 
-  // 4. Upload file into the folder
-  var file = folder.createFile(blob);
+  // 4. Create file in folder (or root if folder failed)
+  var file;
+  try {
+    file = folder.createFile(blob);
+  } catch (createErr) {
+    // If creating inside folder fails due to permissions, create directly in root
+    file = DriveApp.createFile(blob);
+  }
 
-  // 5. Make the file accessible to anyone with the link (so the admin can open it)
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  // 5. Try setting public sharing (wrap in try/catch in case domain policies restrict ANYONE_WITH_LINK)
+  try {
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (sharingErr) {
+    Logger.log('Could not set public sharing: ' + sharingErr.message);
+  }
 
   // 6. Build the shareable view URL
   var fileId  = file.getId();
