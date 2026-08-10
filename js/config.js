@@ -18,7 +18,7 @@ const APP_CONFIG = {
   // The GAS function must handle action='uploadFileToDrive' and return:
   //   { success: true, data: { file_url: '...', file_id: '...' } }
   // Leave empty to run in offline/demo mode (files won't actually upload).
-  GAS_UPLOAD_URL: 'https://script.google.com/macros/s/AKfycbwrzuoCdO8J3RKJgC0-AXzGWAo_uxhWdPnw_msT_PfEtQRZIUQ63hleOMA6FcX8Lxra/exec',
+  GAS_UPLOAD_URL: 'https://script.google.com/macros/s/AKfycbxz38nmzQWufKVYSEgUSeN18ukF_yvxz8LjDw7aT1oUeEu7R7s91OVFmycdFDXeVMwe/exec',
 
   MAX_FILE_SIZE_MB: 25,
   ALLOWED_EXTENSIONS: ['pdf', 'docx', 'doc', 'xlsx', 'xls', 'txt'],

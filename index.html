@@ -4,41 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#343a40">
-  <meta name="description" content="Markaz Printing v2.0 – Sistem Permohonan Cetak Digital Yayasan T.I.B.Y.A.N. Powered by Buana Studios.">
-  <title>Markaz Printing v2.0 - Buana Studios | Yayasan T.I.B.Y.A.N.</title>
+  <meta name="description" content="Markaz Printing v3.0 – Sistem Permohonan Cetak Digital Yayasan T.I.B.Y.A.N. Powered by Buana Studios.">
+  <title>Markaz Printing v3.0 - Buana Studios | Yayasan T.I.B.Y.A.N.</title>
 
-  <!-- Google Fonts & AdminLTE 3 / 4 Master CSS Design System -->
+  <!-- ── Performance: DNS Prefetch & Preconnect for external domains ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+  <link rel="dns-prefetch" href="https://script.google.com">
+
+  <!-- ── Google Fonts: non-blocking (display=swap prevents FOIT) ── -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Google+Sans:wght@500;700&display=swap"
+    media="print" onload="this.media='all'">
+  <!-- Fallback for browsers with JS disabled -->
+  <noscript>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Google+Sans:wght@500;700&display=swap">
+  </noscript>
+
+  <!-- App CSS (no @import inside — fonts moved to <link> above) -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- ── Inline critical spin animation so loader shows instantly ── -->
+  <style>
+    @keyframes spin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 
   <!-- AdminLTE Main Layout Wrapper -->
   <div class="wrapper" id="app-root">
-
-    <!-- AdminLTE Top Header Component Slot -->
     <div id="header-slot"></div>
-
-    <!-- AdminLTE Left Sidebar Component Slot -->
     <div id="nav-mobile-slot"></div>
-
-    <!-- AdminLTE Content Wrapper -->
     <div class="content-wrapper">
       <main class="content" id="main-container">
-        
-        <!-- Component Slots for View Partials -->
         <div id="view-dashboard-slot"></div>
         <div id="view-request-slot"></div>
         <div id="view-status-slot"></div>
-
       </main>
     </div>
-
   </div>
 
-  <!-- Global Fullscreen Loader Overlay -->
-  <div id="global-loader" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.7); backdrop-filter: blur(4px); z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;">
-    <div style="width: 48px; height: 48px; border: 5px solid var(--border-color); border-top-color: var(--adminlte-primary); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-    <div style="font-family: var(--font-heading); font-size: 14px; font-weight: 600; color: var(--text-dark);">Memuat Markaz Printing v2.0...</div>
+  <!-- Global Fullscreen Loader Overlay (visible immediately on paint) -->
+  <div id="global-loader" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+    <div style="width:48px;height:48px;border:5px solid #dee2e6;border-top-color:#007bff;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+    <div style="font-size:14px;font-weight:600;color:#343a40;">Memuat Markaz Printing v3.0...</div>
   </div>
 
   <!-- Toast Notification Container -->
@@ -47,38 +61,28 @@
   <!-- Modals & Dialogs Component Slot -->
   <div id="modals-slot"></div>
 
-  <style>
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+  <!-- ════════════════════════════════════════════════════════════════════
+       Firebase SDK — defer lets browser download all scripts IN PARALLEL
+       while keeping the execution ORDER (app→firestore→analytics→firebase.js)
+       ════════════════════════════════════════════════════════════════════ -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <script defer src="js/firebase.js"></script>
 
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       Firebase SDK (Compat/UMD CDN — no bundler required)
-       Must be loaded BEFORE firebase.js and all app scripts.
-  ════════════════════════════════════════════════════════════════════════ -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
-
-  <!-- Firebase App Initialization (exposes global: db, storage, analytics) -->
-  <script src="js/firebase.js"></script>
-
-  <!-- ═══════════════════════════════════════════════════════════════════════
-       Modular JavaScript Engine & Feature Module Inclusions
-  ════════════════════════════════════════════════════════════════════════ -->
-  <script src="js/config.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/template-engine.js"></script>
-  <script src="js/modules/ui.js"></script>
-  <script src="js/modules/router.js"></script>
-  <script src="js/modules/dashboard.js"></script>
-  <script src="js/modules/request.js"></script>
-  <script src="js/modules/status.js"></script>
-  <script src="js/modules/users.js"></script>
-  <script src="js/app.js"></script>
+  <!-- ════════════════════════════════════════════════════════════════════
+       App scripts — all deferred, downloaded in parallel, run in order
+       ════════════════════════════════════════════════════════════════════ -->
+  <script defer src="js/config.js"></script>
+  <script defer src="js/api.js"></script>
+  <script defer src="js/template-engine.js"></script>
+  <script defer src="js/modules/ui.js"></script>
+  <script defer src="js/modules/router.js"></script>
+  <script defer src="js/modules/dashboard.js"></script>
+  <script defer src="js/modules/request.js"></script>
+  <script defer src="js/modules/status.js"></script>
+  <script defer src="js/modules/users.js"></script>
+  <script defer src="js/app.js"></script>
 
 </body>
 </html>
-
