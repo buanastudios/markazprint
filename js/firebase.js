@@ -1,10 +1,11 @@
 /**
- * MARKAZ PRINTING v2.0
+ * MARKAZ PRINTING v3.0
  * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
  * firebase.js - Firebase App Initialization & Global SDK Exports
  *
  * Uses the Firebase Compat (v8-API) UMD CDN builds so no bundler is needed.
- * All modules access `db`, `storage`, and `analytics` as globals after this script loads.
+ * File uploads go to Google Drive (via GAS), NOT Firebase Storage.
+ * Firebase is used for: Firestore (database) + Analytics only.
  */
 
 const firebaseConfig = {
@@ -29,15 +30,10 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 
 /**
- * Firebase Storage instance.
- * Used by request.js to upload print documents before creating a Firestore record.
- */
-const storage = firebase.storage();
-
-/**
  * Firebase Analytics instance.
  * Passive – automatically tracks page views and custom events.
  */
 const analytics = firebase.analytics();
 
 console.log('[Markaz Print] Firebase initialized ✓ | Project:', firebaseConfig.projectId);
+console.log('[Markaz Print] File storage: Google Drive via GAS | Database: Firestore');

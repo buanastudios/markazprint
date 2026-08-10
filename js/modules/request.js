@@ -1,7 +1,10 @@
 /**
- * MARKAZ PRINTING v2.0
+ * MARKAZ PRINTING v3.0
  * Powered by Buana Studios for Yayasan T.I.B.Y.A.N.
- * request.js - Print Request Form, Drag-and-Drop & Firebase Storage Upload Module
+ * request.js - Print Request Form, Drag-and-Drop & Google Drive File Upload Module
+ *
+ * File storage: Google Drive (via GAS endpoint)
+ * Request metadata: Firebase Firestore
  */
 
 const RequestModule = {
@@ -70,16 +73,21 @@ const RequestModule = {
 
     AppState.selectedFile = file;
 
-    // Show file info card (no longer need base64 for preview)
-    const cardName = document.getElementById('file-card-name');
-    const cardSize = document.getElementById('file-card-size');
-    const fileInfo = document.getElementById('selected-file-info');
-    const dropBox = document.getElementById('uploader-drop-box');
+    // Read as Base64 for GAS Drive upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      AppState.selectedFileBase64 = e.target.result;
+      const cardName = document.getElementById('file-card-name');
+      const cardSize = document.getElementById('file-card-size');
+      const fileInfo = document.getElementById('selected-file-info');
+      const dropBox = document.getElementById('uploader-drop-box');
 
-    if (cardName) cardName.innerText = file.name;
-    if (cardSize) cardSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
-    if (fileInfo) fileInfo.style.display = 'flex';
-    if (dropBox) dropBox.style.display = 'none';
+      if (cardName) cardName.innerText = file.name;
+      if (cardSize) cardSize.innerText = (file.size / 1024).toFixed(1) + ' KB';
+      if (fileInfo) fileInfo.style.display = 'flex';
+      if (dropBox) dropBox.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
   },
 
   removeSelectedFile() {
@@ -111,53 +119,59 @@ const RequestModule = {
   },
 
   /**
-   * Uploads a file to Firebase Storage and returns its public download URL.
-   * Shows a progress bar during upload.
+   * Uploads a file to Google Drive via the Google Apps Script endpoint.
+   * The GAS function saves the file to a designated Drive folder and returns
+   * the public Drive view URL.
    *
-   * @param {File} file - The file object to upload
-   * @param {string} queueId - Used to build a unique storage path
-   * @returns {Promise<{url: string, path: string}>}
+   * @param {File} file - The file object
+   * @param {string} base64Data - The base64-encoded file content (data URL)
+   * @returns {Promise<{url: string, fileId: string}>}
    */
-  uploadFileToStorage(file, queueId) {
-    return new Promise((resolve, reject) => {
-      // Guard: if Firebase Storage isn't available, skip upload
-      if (typeof storage === 'undefined') {
-        console.warn('[Storage] Firebase Storage not ready – skipping upload.');
-        return resolve({ url: '#', path: '' });
+  async uploadFileToDrive(file, base64Data) {
+    const gasUrl = APP_CONFIG.GAS_UPLOAD_URL;
+    if (!gasUrl) {
+      // No GAS endpoint — return placeholder (offline/demo mode)
+      console.warn('[Drive Upload] GAS_UPLOAD_URL not set. Skipping upload.');
+      return { url: '#', fileId: 'demo_' + Date.now() };
+    }
+
+    const submitBtn = document.getElementById('btn-submit-request');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Mengunggah ke Drive...';
+    }
+
+    try {
+      const body = JSON.stringify({
+        action: 'uploadFileToDrive',
+        payload: {
+          file_name: file.name,
+          file_mime: file.type,
+          file_data: base64Data  // base64 data URL
+        }
+      });
+
+      const response = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body
+      });
+
+      const text = await response.text();
+      if (text.trim().startsWith('<')) {
+        throw new Error('GAS endpoint mengembalikan HTML. Pastikan Web App diset ke "Anyone".');
       }
 
-      const storagePath = `printFiles/${queueId}/${file.name}`;
-      const storageRef = storage.ref(storagePath);
-      const uploadTask = storageRef.put(file);
+      const result = JSON.parse(text);
+      if (!result.success) throw new Error(result.message || 'Upload ke Drive gagal.');
 
-      // Show upload progress in the submit button
-      const submitBtn = document.getElementById('btn-submit-request');
-      if (submitBtn) submitBtn.disabled = true;
-
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          if (submitBtn) submitBtn.innerText = `Mengunggah... ${progress}%`;
-        },
-        (err) => {
-          console.error('[Storage] Upload error:', err);
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'Kirim Permohonan';
-          }
-          reject(new Error('Gagal mengunggah file ke Firebase Storage: ' + err.message));
-        },
-        async () => {
-          const downloadUrl = await uploadTask.snapshot.ref.getDownloadURL();
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = 'Kirim Permohonan';
-          }
-          resolve({ url: downloadUrl, path: storagePath });
-        }
-      );
-    });
+      return { url: result.data.file_url, fileId: result.data.file_id };
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Kirim Permohonan';
+      }
+    }
   },
 
   async handleSubmit(event) {
@@ -175,24 +189,23 @@ const RequestModule = {
     };
 
     if (AppState.activeUploadTab === 'file') {
-      if (!AppState.selectedFile) {
+      if (!AppState.selectedFile || !AppState.selectedFileBase64) {
         UIModule.showToast('Harap pilih atau tarik dokumen yang akan dicetak.', 'error');
         return;
       }
 
       payload.file_name = AppState.selectedFile.name;
+      payload.file_mime = AppState.selectedFile.type;
 
       try {
-        // 1. Generate a temporary queue ID for storage path naming
-        //    (the real sequential ID will be generated inside callApi)
-        const tempId = `PRN-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-TEMP-${Date.now()}`;
-
-        // 2. Upload file to Firebase Storage first
-        UIModule.showToast('Mengunggah dokumen ke Firebase Storage...', 'info');
-        const { url, path } = await this.uploadFileToStorage(AppState.selectedFile, tempId);
-
+        // Upload file to Google Drive via GAS, get back the Drive URL
+        UIModule.showToast('Mengunggah dokumen ke Google Drive...', 'info');
+        const { url, fileId } = await this.uploadFileToDrive(
+          AppState.selectedFile,
+          AppState.selectedFileBase64
+        );
         payload.file_url = url;
-        payload.file_storage_path = path;
+        payload.file_id = fileId;
       } catch (uploadErr) {
         UIModule.showToast(uploadErr.message, 'error');
         return;
